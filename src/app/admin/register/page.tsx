@@ -58,11 +58,19 @@ export default function AdminRegister() {
         return;
       }
 
-      // セッションが確立されるのを待つ
+      // セッションがない場合、signInで取得
+      let userId = authData.user.id;
       if (!authData.session) {
-        setError('セッションが確立できませんでした。メール確認設定を確認してください。');
-        setLoading(false);
-        return;
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (signInError || !signInData.user) {
+          setError('ログインエラー: ' + (signInError?.message || '不明なエラー'));
+          setLoading(false);
+          return;
+        }
+        userId = signInData.user.id;
       }
 
       // 会社情報登録
@@ -70,7 +78,7 @@ export default function AdminRegister() {
         company_code: companyCode,
         company_name: companyName,
         admin_email: email,
-        admin_user_id: authData.user.id,
+        admin_user_id: userId,
       });
 
       if (insertError) {
