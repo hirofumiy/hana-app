@@ -25,7 +25,7 @@ export default function AdminRegister() {
       .from('companies')
       .select('id')
       .eq('company_code', companyCode)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       setError('この会社コードは既に登録されています');
@@ -45,7 +45,7 @@ export default function AdminRegister() {
       return;
     }
 
-    // 会社情報登録
+    // 会社情報登録（signUp後のセッションで実行）
     const { error: insertError } = await supabase.from('companies').insert({
       company_code: companyCode,
       company_name: companyName,
@@ -54,7 +54,7 @@ export default function AdminRegister() {
     });
 
     if (insertError) {
-      setError('会社情報の登録に失敗しました');
+      setError('会社情報の登録に失敗しました: ' + insertError.message);
       setLoading(false);
       return;
     }
