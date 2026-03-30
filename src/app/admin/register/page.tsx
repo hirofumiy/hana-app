@@ -18,49 +18,73 @@ export default function AdminRegister() {
     setError('');
     setLoading(true);
 
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    // 会社コード重複チェック
-    const { data: existing } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('company_code', companyCode)
-      .maybeSingle();
+      // 会社コード重複チェック
+      const { data: existing, error: checkError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('company_code', companyCode)
+        .maybeSingle();
 
-    if (existing) {
-      setError('この会社コードは既に登録されています');
+      if (checkError) {
+        setError('会社コード確認エラー: ' + checkError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (existing) {
+        setError('この会社コードは既に登録されています');
+        setLoading(false);
+        return;
+      }
+
+      // ユーザー作成
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (authError) {
+        setError('アカウント作成エラー: ' + authError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!authData.user) {
+        setError('アカウント作成に失敗しました。このメールアドレスは既に使用されている可能性があります。');
+        setLoading(false);
+        return;
+      }
+
+      // セッションが確立されるのを待つ
+      if (!authData.session) {
+        setError('セッションが確立できませんでした。メール確認設定を確認してください。');
+        setLoading(false);
+        return;
+      }
+
+      // 会社情報登録
+      const { error: insertError } = await supabase.from('companies').insert({
+        company_code: companyCode,
+        company_name: companyName,
+        admin_email: email,
+        admin_user_id: authData.user.id,
+      });
+
+      if (insertError) {
+        setError('会社情報の登録に失敗しました: ' + insertError.message);
+        setLoading(false);
+        return;
+      }
+
+      router.push('/admin');
+      router.refresh();
+    } catch (err) {
+      setError('予期しないエラー: ' + (err instanceof Error ? err.message : String(err)));
       setLoading(false);
-      return;
     }
-
-    // ユーザー作成
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (authError || !authData.user) {
-      setError(authError?.message || '登録に失敗しました');
-      setLoading(false);
-      return;
-    }
-
-    // 会社情報登録（signUp後のセッションで実行）
-    const { error: insertError } = await supabase.from('companies').insert({
-      company_code: companyCode,
-      company_name: companyName,
-      admin_email: email,
-      admin_user_id: authData.user.id,
-    });
-
-    if (insertError) {
-      setError('会社情報の登録に失敗しました: ' + insertError.message);
-      setLoading(false);
-      return;
-    }
-
-    router.push('/admin');
-    router.refresh();
   };
 
   return (
