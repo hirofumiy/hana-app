@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
-  const { name, scores, q10, q20 } = await request.json();
+  const { name, scores, q10, q20, resultId } = await request.json();
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -77,6 +78,15 @@ export async function POST(request: Request) {
     }
 
     const aiResult = JSON.parse(jsonMatch[0]);
+
+    // DBにキャッシュ保存（fire-and-forget）
+    if (resultId) {
+      const supabase = createServiceClient();
+      Promise.resolve(
+        supabase.from('test_results').update({ ai_comment: aiResult }).eq('id', resultId)
+      ).catch((err: unknown) => console.error('AI cache save error:', err));
+    }
+
     return NextResponse.json(aiResult);
   } catch (error) {
     console.error('AI comment error:', error);

@@ -56,19 +56,36 @@ function ResultContent() {
   const searchParams = useSearchParams();
   const resultId = searchParams.get('id');
   const [result, setResult] = useState<TestResult | null>(null);
+  const [loading, setLoading] = useState(true);
   const [aiComment, setAiComment] = useState<AiComment | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
 
+  // DB から結果取得（フォールバック: localStorage）
   useEffect(() => {
-    if (!resultId) return;
-    const results: TestResult[] = JSON.parse(localStorage.getItem('hana-results') ?? '[]');
-    const found = results.find((r) => r.id === resultId);
-    if (found) setResult(found);
+    if (!resultId) { setLoading(false); return; }
+
+    fetch(`/api/result/${resultId}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('not found');
+        return res.json();
+      })
+      .then((data) => {
+        setResult(data);
+        if (data.aiComment) setAiComment(data.aiComment);
+      })
+      .catch(() => {
+        // フォールバック: localStorage
+        const results: TestResult[] = JSON.parse(localStorage.getItem('hana-results') ?? '[]');
+        const found = results.find((r) => r.id === resultId);
+        if (found) setResult(found);
+      })
+      .finally(() => setLoading(false));
   }, [resultId]);
 
+  // AIコメント生成（キャッシュがなければ）
   useEffect(() => {
-    if (!result) return;
+    if (!result || aiComment) return;
     setAiLoading(true);
     fetch('/api/ai-comment', {
       method: 'POST',
@@ -78,6 +95,7 @@ function ResultContent() {
         scores: result.scores,
         q10: result.referenceAnswers.q10,
         q20: result.referenceAnswers.q20,
+        resultId: result.id,
       }),
     })
       .then((res) => {
@@ -87,7 +105,15 @@ function ResultContent() {
       .then((data) => setAiComment(data))
       .catch((err) => setAiError(err.message))
       .finally(() => setAiLoading(false));
-  }, [result]);
+  }, [result, aiComment]);
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#1D9E75] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!result) {
     return (
@@ -106,18 +132,26 @@ function ResultContent() {
   return (
     <div className="flex-1 max-w-lg mx-auto w-full px-4 py-6">
       {/* ヘッダー */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-[#1D9E75] flex items-center justify-center">
-          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#1D9E75] flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-[#0F1F3D]">特性テスト結果</h1>
+            <p className="text-xs text-gray-400">管理者向けページ</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-[#0F1F3D]">特性テスト結果</h1>
-          <p className="text-xs text-gray-400">管理者向けページ</p>
-        </div>
+        <button
+          onClick={() => window.print()}
+          className="print:hidden px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+        >
+          印刷 / PDF
+        </button>
       </div>
 
       {/* 候補者情報 */}
@@ -194,7 +228,7 @@ function ResultContent() {
         )}
         {aiError && (
           <p className="text-sm text-red-400 py-2">
-            AIコメントの取得に失敗しました（APIキーが未設定の可能性があります）
+            AIコメントの取得に失敗しました
           </p>
         )}
         {aiComment && (

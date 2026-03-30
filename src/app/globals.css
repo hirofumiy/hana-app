@@ -15,3 +15,9 @@ body {
   font-family: 'Noto Sans JP', 'Noto Sans', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+@media print {
+  body { background: white !important; }
+  .print\:hidden { display: none !important; }
+  * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

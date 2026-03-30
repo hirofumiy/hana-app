@@ -80,9 +80,16 @@ export default function TestContent() {
         completedAt: new Date().toISOString(),
       };
 
-      const existing = JSON.parse(localStorage.getItem('hana-results') ?? '[]');
-      existing.push(result);
-      localStorage.setItem('hana-results', JSON.stringify(existing));
+      // Supabase に保存（失敗時はlocalStorageフォールバック）
+      fetch('/api/submit-result', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result),
+      }).catch(() => {
+        const existing = JSON.parse(localStorage.getItem('hana-results') ?? '[]');
+        existing.push(result);
+        localStorage.setItem('hana-results', JSON.stringify(existing));
+      });
 
       router.push(`/complete?lang=${lang}&id=${resultId}`);
     }
