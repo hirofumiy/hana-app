@@ -37,59 +37,57 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to save result' }, { status: 500 });
   }
 
-  // AI分析を生成 → メール通知（fire-and-forget）
+  // AI分析を生成 → メール通知（レスポンス前に完了させる）
   if (company?.admin_email) {
     const origin = request.headers.get('origin') || 'https://hana-app-ten.vercel.app';
-    (async () => {
-      try {
-        // AI分析を生成
-        let aiComment = null;
-        const apiKey = process.env.ANTHROPIC_API_KEY;
-        if (apiKey) {
-          const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': apiKey,
-              'anthropic-version': '2023-06-01',
-            },
-            body: JSON.stringify({
-              model: 'claude-sonnet-4-20250514',
-              max_tokens: 500,
-              system: `あなたは外国人採用の専門家AIです。特性テストのスコアから採用担当者向けの日本語レポートをJSONで返してください。
+    try {
+      // AI分析を生成
+      let aiComment = null;
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (apiKey) {
+        const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 500,
+            system: `あなたは外国人採用の専門家AIです。特性テストのスコアから採用担当者向けの日本語レポートをJSONで返してください。
 ルール：断定ではなく「〜の傾向があります」の表現を使う。ネガティブ評価は「注意点」として記述（差別的表現・国籍への言及は絶対禁止）。採用担当者が具体的に動けるアクションを必ず含める。200〜250文字以内。
 出力形式（JSONのみ）：{"judgment":"A or B or C or D","summary":"強みの要約60文字以内","strength":"強み詳細80文字以内","caution":"注意点60文字以内（なければ空文字）","action":"採用後にやること80文字以内","interview_questions":["面接質問1","面接質問2"]}
 判定基準：A判定=4軸平均75点以上かつ誠実性70点以上、B判定=4軸平均60点以上、C判定=誠実性or適応力55点未満、D判定=4軸平均50点未満or誠実性40点未満`,
-              messages: [{ role: 'user', content: `候補者名: ${candidateName || '(未入力)'}\n協調性: ${scores.agreeableness}/100\n誠実性: ${scores.conscientiousness}/100\n適応力: ${scores.adaptability}/100\n積極性: ${scores.proactivity}/100\n前職退職理由: ${referenceAnswers?.q10 || '(未回答)'}\n期待: ${referenceAnswers?.q20 || '(未回答)'}` }],
-            }),
-          });
-          if (aiRes.ok) {
-            const aiData = await aiRes.json();
-            const text = aiData.content?.[0]?.text ?? '';
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              aiComment = JSON.parse(jsonMatch[0]);
-              // DBにキャッシュ保存
-              await supabase.from('test_results').update({ ai_comment: aiComment }).eq('id', id);
-            }
+            messages: [{ role: 'user', content: `候補者名: ${candidateName || '(未入力)'}\n協調性: ${scores.agreeableness}/100\n誠実性: ${scores.conscientiousness}/100\n適応力: ${scores.adaptability}/100\n積極性: ${scores.proactivity}/100\n前職退職理由: ${referenceAnswers?.q10 || '(未回答)'}\n期待: ${referenceAnswers?.q20 || '(未回答)'}` }],
+          }),
+        });
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          const text = aiData.content?.[0]?.text ?? '';
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            aiComment = JSON.parse(jsonMatch[0]);
+            // DBにキャッシュ保存
+            await supabase.from('test_results').update({ ai_comment: aiComment }).eq('id', id);
           }
         }
-
-        // メール送信
-        if (process.env.RESEND_API_KEY) {
-          await sendResultNotification({
-            adminEmail: company.admin_email,
-            candidateName: candidateName || '(氏名未入力)',
-            scores: scores as Scores,
-            judgment: getJudgment(scores as Scores),
-            resultUrl: `${origin}/result?id=${id}`,
-            aiComment,
-          });
-        }
-      } catch (err) {
-        console.error('AI analysis / Email error:', err);
       }
-    })();
+
+      // メール送信
+      if (process.env.RESEND_API_KEY) {
+        await sendResultNotification({
+          adminEmail: company.admin_email,
+          candidateName: candidateName || '(氏名未入力)',
+          scores: scores as Scores,
+          judgment: getJudgment(scores as Scores),
+          resultUrl: `${origin}/result?id=${id}`,
+          aiComment,
+        });
+      }
+    } catch (err) {
+      console.error('AI analysis / Email error:', err);
+    }
   }
 
   return NextResponse.json({ success: true, id });
