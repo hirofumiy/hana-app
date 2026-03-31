@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient, createAuthClient } from '@/lib/supabase/server';
 
+// 受験者用: 会社コードから業種を取得
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code');
   if (!code) {
@@ -18,5 +19,35 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ industry: data?.industry || 'general' });
   } catch {
     return NextResponse.json({ industry: 'general' });
+  }
+}
+
+// 管理者用: 業種を更新
+export async function PUT(req: NextRequest) {
+  try {
+    const supabase = await createAuthClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { industry } = await req.json();
+    if (!industry) {
+      return NextResponse.json({ error: 'Missing industry' }, { status: 400 });
+    }
+
+    const { error } = await supabase
+      .from('companies')
+      .update({ industry })
+      .eq('admin_user_id', user.id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, industry });
+  } catch {
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

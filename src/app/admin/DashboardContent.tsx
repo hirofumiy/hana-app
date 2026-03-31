@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { getJudgment, type Scores } from '@/lib/scoring';
 import { exportCsv } from './csv-export';
+import { INDUSTRIES } from '@/lib/industry-questions';
 
 interface ResultRow {
   id: string;
@@ -32,14 +33,35 @@ function JudgmentBadgeSmall({ judgment }: { judgment: string }) {
 
 export default function DashboardContent({
   companyCode,
+  companyIndustry,
   results,
 }: {
   companyCode: string;
+  companyIndustry: string;
   results: ResultRow[];
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [judgmentFilter, setJudgmentFilter] = useState<string[]>([]);
+  const [industry, setIndustry] = useState(companyIndustry);
+  const [industrySaving, setIndustrySaving] = useState(false);
+  const [industrySaved, setIndustrySaved] = useState(false);
+
+  const handleIndustryChange = async (newIndustry: string) => {
+    setIndustry(newIndustry);
+    setIndustrySaving(true);
+    setIndustrySaved(false);
+    try {
+      await fetch('/api/company-industry', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ industry: newIndustry }),
+      });
+      setIndustrySaved(true);
+      setTimeout(() => setIndustrySaved(false), 2000);
+    } catch { /* ignore */ }
+    finally { setIndustrySaving(false); }
+  };
 
   const enriched = useMemo(() =>
     results.map((r) => {
@@ -124,12 +146,31 @@ export default function DashboardContent({
         )}
       </div>
 
-      {/* テスト URL */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4">
-        <p className="text-xs text-gray-400 mb-1">テスト受験URL（候補者に共有）</p>
-        <code className="text-sm text-[#1D9E75] break-all">
-          {typeof window !== 'undefined' ? window.location.origin : ''}/?code={companyCode}
-        </code>
+      {/* テスト URL & 業種設定 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="bg-white rounded-xl border border-gray-100 p-4">
+          <p className="text-xs text-gray-400 mb-1">テスト受験URL（候補者に共有）</p>
+          <code className="text-sm text-[#1D9E75] break-all">
+            {typeof window !== 'undefined' ? window.location.origin : ''}/?code={companyCode}
+          </code>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 p-4">
+          <p className="text-xs text-gray-400 mb-1">業種設定（テスト内容が業種に合わせて変わります）</p>
+          <div className="flex items-center gap-2 mt-1">
+            <select
+              value={industry}
+              onChange={(e) => handleIndustryChange(e.target.value)}
+              disabled={industrySaving}
+              className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-[#1D9E75] focus:ring-1 focus:ring-[#1D9E75]/20 outline-none disabled:opacity-50"
+            >
+              {INDUSTRIES.map(i => (
+                <option key={i.code} value={i.code}>{i.label}</option>
+              ))}
+            </select>
+            {industrySaving && <span className="text-xs text-gray-400">保存中...</span>}
+            {industrySaved && <span className="text-xs text-[#1D9E75]">✓ 保存しました</span>}
+          </div>
+        </div>
       </div>
 
       {/* テーブル */}
@@ -148,6 +189,7 @@ export default function DashboardContent({
                 <th className="text-center px-3 py-3 font-medium text-gray-500">誠</th>
                 <th className="text-center px-3 py-3 font-medium text-gray-500">適</th>
                 <th className="text-center px-3 py-3 font-medium text-gray-500">積</th>
+                <th className="text-center px-3 py-3 font-medium text-gray-500">ス</th>
                 <th className="text-center px-4 py-3 font-medium text-gray-500 cursor-pointer hover:text-gray-700" onClick={() => toggleSort('avg')}>
                   平均 {sortIcon('avg')}
                 </th>
@@ -159,7 +201,7 @@ export default function DashboardContent({
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-gray-400">
+                  <td colSpan={9} className="text-center py-12 text-gray-400">
                     テスト結果がありません
                   </td>
                 </tr>
@@ -178,6 +220,7 @@ export default function DashboardContent({
                     <td className="text-center px-3 py-3 font-mono">{r.scores.conscientiousness}</td>
                     <td className="text-center px-3 py-3 font-mono">{r.scores.adaptability}</td>
                     <td className="text-center px-3 py-3 font-mono">{r.scores.proactivity}</td>
+                    <td className="text-center px-3 py-3 font-mono">{r.scores.stressTolerance ?? '-'}</td>
                     <td className="text-center px-4 py-3 font-bold">{r.avg}</td>
                     <td className="text-center px-4 py-3">
                       <JudgmentBadgeSmall judgment={r.judgment} />

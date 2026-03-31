@@ -10,7 +10,7 @@ export default async function AdminDashboard() {
 
   const { data: company } = await supabase
     .from('companies')
-    .select('company_code, company_name')
+    .select('company_code, company_name, industry')
     .eq('admin_user_id', user.id)
     .single();
 
@@ -25,6 +25,7 @@ export default async function AdminDashboard() {
   return (
     <DashboardContent
       companyCode={company.company_code}
+      companyIndustry={company.industry || 'general'}
       results={results ?? []}
     />
   );
