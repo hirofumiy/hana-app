@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { INDUSTRIES } from '@/lib/industry-questions';
 
 export default function AdminRegister() {
   const router = useRouter();
   const [companyCode, setCompanyCode] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [industry, setIndustry] = useState('general');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -77,6 +79,7 @@ export default function AdminRegister() {
       const { error: insertError } = await supabase.from('companies').insert({
         company_code: companyCode,
         company_name: companyName,
+        industry,
         admin_email: email,
         admin_user_id: userId,
       });
@@ -136,6 +139,19 @@ export default function AdminRegister() {
               required
               className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#0F1F3D] focus:ring-2 focus:ring-[#0F1F3D]/20 outline-none text-base"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">業種</label>
+            <select
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#0F1F3D] focus:ring-2 focus:ring-[#0F1F3D]/20 outline-none text-base"
+            >
+              {INDUSTRIES.map(i => (
+                <option key={i.code} value={i.code}>{i.label}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-400 mt-1">テスト内容が業種に合わせてカスタマイズされます</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">管理者メールアドレス</label>

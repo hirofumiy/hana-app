@@ -2,8 +2,8 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AXIS_LABELS } from '@/lib/questions';
-import { getJudgment, type TestResult } from '@/lib/scoring';
+import { AXIS_LABELS, type Axis } from '@/lib/questions';
+import { getJudgment, getStrengthsAndWeaknesses, type TestResult } from '@/lib/scoring';
 
 interface AiComment {
   judgment: string;
@@ -14,7 +14,9 @@ interface AiComment {
   interview_questions: string[];
 }
 
-function ScoreBar({ label, score }: { label: string; score: number }) {
+function ScoreBar({ label, score, isStrength, isWeakness }: {
+  label: string; score: number; isStrength?: boolean; isWeakness?: boolean;
+}) {
   const color =
     score >= 75 ? 'bg-[#1D9E75]' :
     score >= 60 ? 'bg-[#4DB89A]' :
@@ -24,7 +26,11 @@ function ScoreBar({ label, score }: { label: string; score: number }) {
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-sm">
-        <span className="font-medium text-gray-700">{label}</span>
+        <span className="font-medium text-gray-700 flex items-center gap-1.5">
+          {isStrength && <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold">強み</span>}
+          {isWeakness && <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full font-semibold">課題</span>}
+          {label}
+        </span>
         <span className="font-bold text-[#0F1F3D]">{score}</span>
       </div>
       <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -61,7 +67,6 @@ function ResultContent() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
 
-  // DB から結果取得（フォールバック: localStorage）
   useEffect(() => {
     if (!resultId) { setLoading(false); return; }
 
@@ -75,7 +80,6 @@ function ResultContent() {
         if (data.aiComment) setAiComment(data.aiComment);
       })
       .catch(() => {
-        // フォールバック: localStorage
         const results: TestResult[] = JSON.parse(localStorage.getItem('hana-results') ?? '[]');
         const found = results.find((r) => r.id === resultId);
         if (found) setResult(found);
@@ -83,7 +87,6 @@ function ResultContent() {
       .finally(() => setLoading(false));
   }, [resultId]);
 
-  // AIコメント生成（キャッシュがなければ）
   useEffect(() => {
     if (!result || aiComment) return;
     setAiLoading(true);
@@ -93,8 +96,7 @@ function ResultContent() {
       body: JSON.stringify({
         name: result.candidateName,
         scores: result.scores,
-        q10: result.referenceAnswers.q10,
-        q20: result.referenceAnswers.q20,
+        industryScore: result.industryScore,
         resultId: result.id,
       }),
     })
@@ -124,10 +126,11 @@ function ResultContent() {
   }
 
   const judgment = getJudgment(result.scores);
-  const avg = Math.round(
-    (result.scores.agreeableness + result.scores.conscientiousness +
-     result.scores.adaptability + result.scores.proactivity) / 4
-  );
+  const { strengths, weaknesses } = getStrengthsAndWeaknesses(result.scores);
+  const scoreValues = Object.values(result.scores) as number[];
+  const avg = Math.round(scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length);
+
+  const axisOrder: Axis[] = ['agreeableness', 'conscientiousness', 'adaptability', 'proactivity', 'stressTolerance'];
 
   return (
     <div className="flex-1 max-w-lg mx-auto w-full px-4 py-6">
@@ -179,41 +182,56 @@ function ResultContent() {
             <p className="font-bold text-[#1D9E75] text-lg">{avg} / 100</p>
           </div>
           <div>
-            <p className="text-gray-400">言語</p>
-            <p className="font-medium">{result.language.toUpperCase()}</p>
+            <p className="text-gray-400">業種適性</p>
+            <p className="font-bold text-[#0F1F3D] text-lg">{result.industryScore ?? '-'} / 100</p>
           </div>
         </div>
       </div>
 
-      {/* スコア詳細 */}
+      {/* 5軸スコア */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-          4軸スコア
+          5軸スコア
         </h2>
         <div className="space-y-4">
-          <ScoreBar label={AXIS_LABELS.agreeableness.ja} score={result.scores.agreeableness} />
-          <ScoreBar label={AXIS_LABELS.conscientiousness.ja} score={result.scores.conscientiousness} />
-          <ScoreBar label={AXIS_LABELS.adaptability.ja} score={result.scores.adaptability} />
-          <ScoreBar label={AXIS_LABELS.proactivity.ja} score={result.scores.proactivity} />
+          {axisOrder.map(axis => (
+            <ScoreBar
+              key={axis}
+              label={AXIS_LABELS[axis].ja}
+              score={result.scores[axis]}
+              isStrength={strengths.includes(axis)}
+              isWeakness={weaknesses.includes(axis)}
+            />
+          ))}
         </div>
       </div>
 
-      {/* 参考回答 */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-          参考回答
-        </h2>
-        <div className="space-y-2 text-sm">
-          <div>
-            <span className="text-gray-400">Q10 前職退職理由:</span>
-            <span className="ml-2 font-medium">{result.referenceAnswers.q10 || '-'}</span>
-          </div>
-          <div>
-            <span className="text-gray-400">Q20 期待:</span>
-            <span className="ml-2 font-medium">{result.referenceAnswers.q20 || '-'}</span>
+      {/* 強み・課題サマリー */}
+      {(strengths.length > 0 || weaknesses.length > 0) && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            特性サマリー
+          </h2>
+          <div className="space-y-3 text-sm">
+            {strengths.length > 0 && (
+              <div>
+                <p className="text-green-700 font-medium mb-1">💪 強み</p>
+                <p className="text-gray-700">
+                  {strengths.map(a => AXIS_LABELS[a].ja).join('・')}のスコアが高く、この分野で力を発揮できる傾向があります。
+                </p>
+              </div>
+            )}
+            {weaknesses.length > 0 && (
+              <div>
+                <p className="text-orange-700 font-medium mb-1">⚠️ 課題</p>
+                <p className="text-gray-700">
+                  {weaknesses.map(a => AXIS_LABELS[a].ja).join('・')}のスコアが相対的に低く、フォローアップが推奨されます。
+                </p>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
 
       {/* AIコメント */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">

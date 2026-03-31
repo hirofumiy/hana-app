@@ -43,9 +43,8 @@ export default function DashboardContent({
 
   const enriched = useMemo(() =>
     results.map((r) => {
-      const avg = Math.round(
-        (r.scores.agreeableness + r.scores.conscientiousness + r.scores.adaptability + r.scores.proactivity) / 4
-      );
+      const scoreValues = [r.scores.agreeableness, r.scores.conscientiousness, r.scores.adaptability, r.scores.proactivity, r.scores.stressTolerance ?? 0];
+      const avg = Math.round(scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length);
       return { ...r, avg, judgment: getJudgment(r.scores) };
     }),
   [results]);

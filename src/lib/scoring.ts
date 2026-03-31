@@ -1,11 +1,13 @@
-// Hana 採点ロジック
-import { questions, type Question } from './questions';
+// Hana 採点ロジック v3
+// 5軸 + 業種適性スコア、[5,3,1,0] スコアリング
+import { questions, type Question, type Axis } from './questions';
 
 export interface Scores {
   agreeableness: number;
   conscientiousness: number;
   adaptability: number;
   proactivity: number;
+  stressTolerance: number;
 }
 
 export interface TestResult {
@@ -15,66 +17,119 @@ export interface TestResult {
   language: string;
   answers: Record<number, number>; // questionId -> choiceIndex (0-3)
   scores: Scores;
-  referenceAnswers: { q10: string; q15: string; q20: string };
+  industryScore: number; // 業種適性スコア (0-100)
   completedAt: string;
 }
 
-// 参考設問(計算外): Q10, Q15, Q20
-// v2: 全問統一スコア（選択肢の並び順 = スコア順）
+// v3: [5, 3, 1, 0] でコントラスト強化
+const SCORE_MAP = [5, 3, 1, 0];
 
-function getScore(question: Question, choiceIndex: number): number {
-  if (question.referenceOnly) return 0;
-  const scores = [4, 3, 2, 1]; // index 0=4点, index 1=3点, index 2=2点, index 3=1点
-  return scores[choiceIndex] ?? 0;
+function getScore(choiceIndex: number): number {
+  return SCORE_MAP[choiceIndex] ?? 0;
 }
 
+/** ベース15問のスコア計算 */
 export function calculateScores(answers: Record<number, number>): Scores {
-  const axisTotals: Record<Question['axis'], number> = {
+  const axisTotals: Record<Axis, number> = {
     agreeableness: 0,
     conscientiousness: 0,
     adaptability: 0,
     proactivity: 0,
+    stressTolerance: 0,
   };
 
-  const axisCounts: Record<Question['axis'], number> = {
+  const axisCounts: Record<Axis, number> = {
     agreeableness: 0,
     conscientiousness: 0,
     adaptability: 0,
     proactivity: 0,
+    stressTolerance: 0,
   };
 
   for (const q of questions) {
-    if (q.referenceOnly) continue;
     const choiceIndex = answers[q.id];
     if (choiceIndex === undefined) continue;
 
-    axisTotals[q.axis] += getScore(q, choiceIndex);
+    axisTotals[q.axis] += getScore(choiceIndex);
     axisCounts[q.axis]++;
   }
 
-  // 各軸: 有効回答数の合計(最大20点) → 100点換算(×5)
-  // 各軸の計算対象設問数（referenceOnly除外）:
-  // 協調性: Q1-Q5 → 5問, 最大20点 → ×5 = 100
-  // 誠実性: Q6-Q9 → 4問, 最大16点 → 100点換算
-  // 適応力: Q11-Q14 → 4問(Q11,12,13,14), 最大16点 → 100点換算
-  // 積極性: Q16-Q19 → 4問, 最大16点 → 100点換算
+  // 各軸: 3問 × 最大5点 = 15点満点 → 100点換算
+  const toPercent = (axis: Axis) => {
+    if (axisCounts[axis] === 0) return 0;
+    const max = axisCounts[axis] * 5;
+    return Math.round((axisTotals[axis] / max) * 100);
+  };
+
   return {
-    agreeableness: Math.round((axisTotals.agreeableness / (axisCounts.agreeableness * 4)) * 100),
-    conscientiousness: Math.round((axisTotals.conscientiousness / (axisCounts.conscientiousness * 4)) * 100),
-    adaptability: Math.round((axisTotals.adaptability / (axisCounts.adaptability * 4)) * 100),
-    proactivity: Math.round((axisTotals.proactivity / (axisCounts.proactivity * 4)) * 100),
+    agreeableness: toPercent('agreeableness'),
+    conscientiousness: toPercent('conscientiousness'),
+    adaptability: toPercent('adaptability'),
+    proactivity: toPercent('proactivity'),
+    stressTolerance: toPercent('stressTolerance'),
   };
 }
 
-export function getJudgment(scores: Scores): 'A' | 'B' | 'C' | 'D' {
-  const avg = (scores.agreeableness + scores.conscientiousness + scores.adaptability + scores.proactivity) / 4;
+/** 業種別5問のスコア計算 (Q16-Q20) */
+export function calculateIndustryScore(answers: Record<number, number>): number {
+  let total = 0;
+  let count = 0;
+  for (let qId = 16; qId <= 20; qId++) {
+    const choiceIndex = answers[qId];
+    if (choiceIndex === undefined) continue;
+    total += getScore(choiceIndex);
+    count++;
+  }
+  if (count === 0) return 0;
+  return Math.round((total / (count * 5)) * 100);
+}
 
-  if (scores.conscientiousness < 40) return 'D';
-  if (avg < 50) return 'D';
-  if (scores.conscientiousness < 55 || scores.adaptability < 55) return 'C';
-  if (avg >= 75 && scores.conscientiousness >= 70) return 'A';
+export function getJudgment(scores: Scores): 'A' | 'B' | 'C' | 'D' {
+  const avg = (scores.agreeableness + scores.conscientiousness +
+    scores.adaptability + scores.proactivity + scores.stressTolerance) / 5;
+
+  // 誠実性・ストレス耐性が低い場合は要注意
+  if (scores.conscientiousness < 35 || scores.stressTolerance < 30) return 'D';
+  if (avg < 40) return 'D';
+
+  if (scores.conscientiousness < 50 || scores.adaptability < 45) return 'C';
+  if (avg < 55) return 'C';
+
+  if (avg >= 75 && scores.conscientiousness >= 70 && scores.stressTolerance >= 60) return 'A';
   if (avg >= 60) return 'B';
+
   return 'C';
+}
+
+/** 強み・弱みの抽出 */
+export function getStrengthsAndWeaknesses(scores: Scores): {
+  strengths: Axis[];
+  weaknesses: Axis[];
+} {
+  const axes: { axis: Axis; score: number }[] = [
+    { axis: 'agreeableness', score: scores.agreeableness },
+    { axis: 'conscientiousness', score: scores.conscientiousness },
+    { axis: 'adaptability', score: scores.adaptability },
+    { axis: 'proactivity', score: scores.proactivity },
+    { axis: 'stressTolerance', score: scores.stressTolerance },
+  ];
+
+  const sorted = [...axes].sort((a, b) => b.score - a.score);
+  const avg = axes.reduce((s, a) => s + a.score, 0) / axes.length;
+
+  // 平均より15ポイント以上高い = 強み、15ポイント以上低い = 弱み
+  const strengths = sorted.filter(a => a.score >= avg + 15).map(a => a.axis);
+  const weaknesses = sorted.filter(a => a.score <= avg - 15).map(a => a.axis);
+
+  // 最低1つは表示（差が小さくても上位/下位1つ）
+  if (strengths.length === 0 && sorted[0].score > sorted[sorted.length - 1].score) {
+    strengths.push(sorted[0].axis);
+  }
+  if (weaknesses.length === 0 && sorted[sorted.length - 1].score < sorted[0].score) {
+    weaknesses.push(sorted[sorted.length - 1].axis);
+  }
+
+  return { strengths, weaknesses };
 }
 
 export function generateResultId(): string {

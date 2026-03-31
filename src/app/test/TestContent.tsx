@@ -1,13 +1,20 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { questions, type Language } from '@/lib/questions';
+import { questions, type Language, type Question } from '@/lib/questions';
+import { getIndustryQuestions, type IndustryQuestion } from '@/lib/industry-questions';
 import { UI_TEXT } from '@/lib/i18n';
-import { calculateScores, generateResultId, type TestResult } from '@/lib/scoring';
+import { calculateScores, calculateIndustryScore, generateResultId, type TestResult } from '@/lib/scoring';
 
-// シード付きシャッフル（同一セッション内で固定順序を保証）
-// Mulberry32 PRNG（偏りの少ない32bit乱数生成器）
+// 統合質問型（ベース + 業種別を同じインターフェースで扱う）
+interface UnifiedQuestion {
+  id: number;
+  text: Record<Language, string>;
+  choices: [{ label: Record<Language, string> }, { label: Record<Language, string> }, { label: Record<Language, string> }, { label: Record<Language, string> }];
+}
+
+// Mulberry32 PRNG シャッフル（偏りの少ない32bit乱数生成器）
 function seededShuffle<T>(arr: T[], seed: number): { item: T; originalIndex: number }[] {
   const indexed = arr.map((item, i) => ({ item, originalIndex: i }));
   let s = seed | 0;
@@ -17,7 +24,6 @@ function seededShuffle<T>(arr: T[], seed: number): { item: T; originalIndex: num
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  // Fisher-Yates shuffle
   for (let i = indexed.length - 1; i > 0; i--) {
     const j = Math.floor(next() * (i + 1));
     [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
@@ -35,28 +41,72 @@ export default function TestContent() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
+  const [industryQuestions, setIndustryQuestions] = useState<IndustryQuestion[]>([]);
+  const [industryLoaded, setIndustryLoaded] = useState(false);
 
-  // クライアントサイドのみで実行されるため Math.random() でOK
+  // 会社の業種を取得して業種別質問をロード
+  useEffect(() => {
+    if (!companyCode) {
+      setIndustryLoaded(true);
+      return;
+    }
+    fetch(`/api/company-industry?code=${encodeURIComponent(companyCode)}`)
+      .then(res => res.json())
+      .then(data => {
+        const iq = getIndustryQuestions(data.industry || 'general');
+        setIndustryQuestions(iq);
+      })
+      .catch(() => {
+        setIndustryQuestions(getIndustryQuestions('general'));
+      })
+      .finally(() => setIndustryLoaded(true));
+  }, [companyCode]);
+
+  // ベース15問 + 業種別5問 = 20問の統合リスト
+  const allQuestions: UnifiedQuestion[] = useMemo(() => {
+    const base: UnifiedQuestion[] = questions.map(q => ({
+      id: q.id,
+      text: q.text,
+      choices: q.choices,
+    }));
+    const industry: UnifiedQuestion[] = industryQuestions.map(q => ({
+      id: q.id,
+      text: q.text,
+      choices: q.choices,
+    }));
+    return [...base, ...industry];
+  }, [industryQuestions]);
+
   const [shuffleSeed] = useState(() => Math.floor(Math.random() * 100000));
   const shuffledChoicesMap = useMemo(() => {
-    const map: Record<number, { item: (typeof questions)[0]['choices'][0]; originalIndex: number }[]> = {};
-    for (const q of questions) {
+    const map: Record<number, { item: UnifiedQuestion['choices'][0]; originalIndex: number }[]> = {};
+    for (const q of allQuestions) {
       map[q.id] = seededShuffle([...q.choices], shuffleSeed + q.id);
     }
     return map;
-  }, [shuffleSeed]);
+  }, [shuffleSeed, allQuestions]);
 
-  const currentQuestion = questions[currentIndex];
-  const totalQuestions = questions.length;
+  if (!industryLoaded) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#1D9E75] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const totalQuestions = allQuestions.length;
+  const currentQuestion = allQuestions[currentIndex];
+  if (!currentQuestion) return null;
+
   const progress = ((currentIndex) / totalQuestions) * 100;
   const shuffledChoices = shuffledChoicesMap[currentQuestion.id];
 
-  const handleChoiceSelect = useCallback((displayIndex: number) => {
+  const handleChoiceSelect = (displayIndex: number) => {
     setSelectedChoice(displayIndex);
-  }, []);
+  };
 
-  const handleNext = useCallback(() => {
-    if (selectedChoice === null) return;
+  const handleNext = () => {
+    if (selectedChoice === null || !shuffledChoices) return;
 
     const originalIndex = shuffledChoices[selectedChoice].originalIndex;
     const newAnswers = { ...answers, [currentQuestion.id]: originalIndex };
@@ -67,6 +117,7 @@ export default function TestContent() {
       setCurrentIndex(currentIndex + 1);
     } else {
       const scores = calculateScores(newAnswers);
+      const industryScore = calculateIndustryScore(newAnswers);
       const resultId = generateResultId();
 
       const result: TestResult = {
@@ -76,11 +127,7 @@ export default function TestContent() {
         language: lang,
         answers: newAnswers,
         scores,
-        referenceAnswers: {
-          q10: questions[9].choices[newAnswers[10] ?? 0]?.label[lang] ?? '',
-          q15: questions[14].choices[newAnswers[15] ?? 0]?.label[lang] ?? '',
-          q20: questions[19].choices[newAnswers[20] ?? 0]?.label[lang] ?? '',
-        },
+        industryScore,
         completedAt: new Date().toISOString(),
       };
 
@@ -97,7 +144,7 @@ export default function TestContent() {
 
       router.push(`/complete?lang=${lang}&id=${resultId}`);
     }
-  }, [selectedChoice, shuffledChoices, answers, currentQuestion, currentIndex, totalQuestions, candidateName, companyCode, lang, router]);
+  };
 
   const choiceLabels = ['A', 'B', 'C', 'D'];
 
@@ -130,7 +177,7 @@ export default function TestContent() {
 
       {/* 選択肢（ランダム順） */}
       <div className="space-y-3 flex-1">
-        {shuffledChoices.map((entry, displayIndex) => (
+        {shuffledChoices?.map((entry, displayIndex) => (
           <button
             key={entry.originalIndex}
             onClick={() => handleChoiceSelect(displayIndex)}

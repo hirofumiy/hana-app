@@ -23,6 +23,7 @@ interface NotificationParams {
     conscientiousness: number;
     adaptability: number;
     proactivity: number;
+    stressTolerance: number;
   };
   judgment: string;
   resultUrl: string;
@@ -32,7 +33,7 @@ interface NotificationParams {
 export async function sendResultNotification(params: NotificationParams) {
   const { adminEmail, candidateName, scores, judgment, resultUrl, aiComment } = params;
   const avg = Math.round(
-    (scores.agreeableness + scores.conscientiousness + scores.adaptability + scores.proactivity) / 4
+    (scores.agreeableness + scores.conscientiousness + scores.adaptability + scores.proactivity + scores.stressTolerance) / 5
   );
 
   const judgmentLabel: Record<string, string> = {
@@ -99,6 +100,7 @@ export async function sendResultNotification(params: NotificationParams) {
             <div style="display: flex; justify-content: space-between; margin: 4px 0;"><span>誠実性</span><span style="font-weight:bold;color:#0F1F3D;">${scores.conscientiousness}</span></div>
             <div style="display: flex; justify-content: space-between; margin: 4px 0;"><span>適応力</span><span style="font-weight:bold;color:#0F1F3D;">${scores.adaptability}</span></div>
             <div style="display: flex; justify-content: space-between; margin: 4px 0;"><span>積極性</span><span style="font-weight:bold;color:#0F1F3D;">${scores.proactivity}</span></div>
+            <div style="display: flex; justify-content: space-between; margin: 4px 0;"><span>ストレス耐性</span><span style="font-weight:bold;color:#0F1F3D;">${scores.stressTolerance}</span></div>
           </div>
         </div>
         ${aiSection}

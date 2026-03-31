@@ -1,7 +1,11 @@
-// Hana 採用前特性テスト - 全20問 7言語データ
-// v2: 社会的望ましさバイアスを低減した選択肢設計
+// Hana 採用前特性テスト v3
+// 15問・5軸（協調性・誠実性・適応力・積極性・ストレス耐性）
+// スコアリング: [5, 3, 1, 0] でコントラスト強化
+// + 業種別5問（Q16-Q20）は industry-questions.ts から動的に読み込み
 
 export type Language = 'ja' | 'vi' | 'zh' | 'tl' | 'id' | 'ne' | 'th';
+
+export type Axis = 'agreeableness' | 'conscientiousness' | 'adaptability' | 'proactivity' | 'stressTolerance';
 
 export interface Choice {
   label: Record<Language, string>;
@@ -9,11 +13,9 @@ export interface Choice {
 
 export interface Question {
   id: number;
-  axis: 'agreeableness' | 'conscientiousness' | 'adaptability' | 'proactivity';
-  reverseScore: boolean;
-  referenceOnly: boolean; // スコア計算外
+  axis: Axis;
   text: Record<Language, string>;
-  choices: [Choice, Choice, Choice, Choice]; // A, B, C, D（スコア順: 4, 3, 2, 1）
+  choices: [Choice, Choice, Choice, Choice]; // スコア順: 5, 3, 1, 0
 }
 
 export const LANGUAGES: { code: Language; flag: string; name: string }[] = [
@@ -26,7 +28,7 @@ export const LANGUAGES: { code: Language; flag: string; name: string }[] = [
   { code: 'th', flag: '🇹🇭', name: 'ภาษาไทย' },
 ];
 
-export const AXIS_LABELS: Record<Question['axis'], Record<Language, string>> = {
+export const AXIS_LABELS: Record<Axis, Record<Language, string>> = {
   agreeableness: {
     ja: '協調性', vi: 'Tính hòa đồng', zh: '协调性',
     tl: 'Pagkamaayon', id: 'Kecocokan', ne: 'सहमतिशीलता', th: 'ความเห็นอกเห็นใจ',
@@ -43,12 +45,17 @@ export const AXIS_LABELS: Record<Question['axis'], Record<Language, string>> = {
     ja: '積極性', vi: 'Tính chủ động', zh: '积极性',
     tl: 'Pagiging aktibo', id: 'Keproaktifan', ne: 'सक्रियता', th: 'ความกระตือรือร้น',
   },
+  stressTolerance: {
+    ja: 'ストレス耐性', vi: 'Khả năng chịu áp lực', zh: '抗压能力',
+    tl: 'Kakayahang makayanan ang stress', id: 'Ketahanan terhadap stres',
+    ne: 'तनाव सहनशीलता', th: 'ความทนทานต่อความเครียด',
+  },
 };
 
 export const questions: Question[] = [
-  // ===== Q1〜Q5: 協調性 (Agreeableness) =====
+  // ===== Q1〜Q3: 協調性 (Agreeableness) =====
   {
-    id: 1, axis: 'agreeableness', reverseScore: false, referenceOnly: false,
+    id: 1, axis: 'agreeableness',
     text: {
       ja: '困っている同僚がいたとき、あなたはどうしますか？',
       vi: 'Khi đồng nghiệp gặp khó khăn, bạn thường làm gì?',
@@ -66,7 +73,7 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 2, axis: 'agreeableness', reverseScore: false, referenceOnly: false,
+    id: 2, axis: 'agreeableness',
     text: {
       ja: 'チームの決定が自分の意見と違うとき、どうしますか？',
       vi: 'Khi quyết định của nhóm khác ý kiến của bạn, bạn sẽ làm gì?',
@@ -84,25 +91,7 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 3, axis: 'agreeableness', reverseScore: false, referenceOnly: false,
-    text: {
-      ja: '職場でトラブルが起きたとき、最初にどう対応しますか？',
-      vi: 'Khi xảy ra sự cố tại nơi làm việc, bạn xử lý thế nào trước tiên?',
-      zh: '工作中发生问题时，您首先会怎么处理？',
-      tl: 'Kapag may problema sa trabaho, ano ang unang gagawin mo?',
-      id: 'Saat terjadi masalah di tempat kerja, apa yang pertama Anda lakukan?',
-      ne: 'कार्यस्थलमा समस्या आएमा, पहिले के गर्नुहुन्छ?',
-      th: 'เมื่อเกิดปัญหาที่ทำงาน สิ่งแรกที่คุณทำคืออะไร?',
-    },
-    choices: [
-      { label: { ja: 'まず周りに状況を共有し、一緒に対応を考える', vi: 'Chia sẻ tình hình với mọi người và cùng nhau tìm cách giải quyết', zh: '先跟周围人分享情况，一起想办法', tl: 'I-share muna ang sitwasyon sa iba at mag-isip ng solusyon', id: 'Berbagi situasi dengan rekan dan mencari solusi bersama', ne: 'पहिले वरिपरिसँग अवस्था साझा गरी सँगै समाधान खोज्छु', th: 'แชร์สถานการณ์กับคนรอบข้างก่อนและคิดหาทางออกร่วมกัน' } },
-      { label: { ja: '状況を整理してから上司に報告する', vi: 'Sắp xếp tình hình rồi báo cáo cấp trên', zh: '整理情况后向上级报告', tl: 'Ayusin ang sitwasyon bago mag-report sa boss', id: 'Menyusun situasi lalu melapor ke atasan', ne: 'अवस्था मिलाएर माथिल्लो अधिकारीलाई रिपोर्ट गर्छु', th: 'จัดการสถานการณ์ให้เรียบร้อยก่อนรายงานหัวหน้า' } },
-      { label: { ja: 'まず自分で対処を試み、必要なら相談する', vi: 'Thử tự giải quyết trước, hỏi nếu cần', zh: '先自己尝试处理，必要时再咨询', tl: 'Susubukang ayusin muna, magtatanong kung kailangan', id: 'Mencoba menangani sendiri dulu, berkonsultasi jika perlu', ne: 'पहिले आफैं प्रयास गर्छु, आवश्यक भए सल्लाह लिन्छु', th: 'ลองจัดการเองก่อน ถ้าจำเป็นค่อยปรึกษา' } },
-      { label: { ja: '冷静に状況を見極めてから、最適なタイミングで動く', vi: 'Bình tĩnh đánh giá tình hình, hành động đúng thời điểm', zh: '冷静观察情况，在最佳时机采取行动', tl: 'Kalmadong suriin ang sitwasyon at kumilos sa tamang oras', id: 'Dengan tenang menilai situasi, bertindak di waktu yang tepat', ne: 'शान्त रूपमा अवस्था बुझेर उचित समयमा काम गर्छु', th: 'ประเมินสถานการณ์อย่างใจเย็นแล้วลงมือในจังหวะที่เหมาะสม' } },
-    ],
-  },
-  {
-    id: 4, axis: 'agreeableness', reverseScore: false, referenceOnly: false,
+    id: 3, axis: 'agreeableness',
     text: {
       ja: '言葉が通じにくい同僚と一緒に作業することになったら？',
       vi: 'Nếu phải làm việc cùng đồng nghiệp khó giao tiếp vì ngôn ngữ?',
@@ -119,27 +108,10 @@ export const questions: Question[] = [
       { label: { ja: 'お互いの得意分野で分担して、効率よく進める', vi: 'Phân công theo thế mạnh của mỗi người, làm việc hiệu quả', zh: '按各自擅长的领域分工，高效推进', tl: 'Hatiin ang trabaho ayon sa lakas ng bawat isa, gawin nang mahusay', id: 'Membagi tugas sesuai keahlian masing-masing, bekerja efisien', ne: 'आ-आफ्नो क्षमताअनुसार बाँडेर कुशलतापूर्वक अगाडि बढ्छु', th: 'แบ่งงานตามจุดแข็งของกันและกัน ทำงานอย่างมีประสิทธิภาพ' } },
     ],
   },
+
+  // ===== Q4〜Q6: 誠実性 (Conscientiousness) =====
   {
-    id: 5, axis: 'agreeableness', reverseScore: false, referenceOnly: false,
-    text: {
-      ja: '職場での人間関係について、最も大切にしていることは？',
-      vi: 'Điều bạn coi trọng nhất trong các mối quan hệ tại nơi làm việc là gì?',
-      zh: '在职场人际关系中，您最重视什么？',
-      tl: 'Ano ang pinaka-importante sa iyo sa relasyon sa trabaho?',
-      id: 'Apa yang paling Anda pentingkan dalam hubungan kerja?',
-      ne: 'कार्यस्थलको सम्बन्धमा तपाईंले सबभन्दा महत्त्व दिने कुरा के हो?',
-      th: 'สิ่งที่คุณให้ความสำคัญมากที่สุดในความสัมพันธ์ในที่ทำงานคืออะไร?',
-    },
-    choices: [
-      { label: { ja: 'お互いの状況を理解し、自然に助け合える関係', vi: 'Hiểu hoàn cảnh của nhau và tự nhiên hỗ trợ lẫn nhau', zh: '互相理解彼此的处境，自然地互帮互助', tl: 'Pag-unawa sa sitwasyon ng bawat isa at natural na pagtutulungan', id: 'Saling memahami situasi dan secara alami saling membantu', ne: 'एकअर्काको अवस्था बुझेर स्वाभाविक रूपमा सहयोग गर्ने सम्बन्ध', th: 'เข้าใจสถานการณ์ของกันและกันและช่วยเหลือกันอย่างเป็นธรรมชาติ' } },
-      { label: { ja: '困ったときに気軽に相談できる関係', vi: 'Mối quan hệ mà có thể thoải mái nhờ giúp khi gặp khó khăn', zh: '遇到困难时能轻松商量的关系', tl: 'Relasyong komportableng humingi ng tulong kapag nahihirapan', id: 'Hubungan di mana bisa dengan mudah berkonsultasi saat kesulitan', ne: 'गाह्रो परेमा सजिलैसँग सल्लाह गर्न सकिने सम्बन्ध', th: 'ความสัมพันธ์ที่ปรึกษาได้สบายใจเมื่อมีปัญหา' } },
-      { label: { ja: '仕事上の役割を尊重し合えること', vi: 'Tôn trọng vai trò của nhau trong công việc', zh: '互相尊重工作角色', tl: 'Magalang sa papel ng bawat isa sa trabaho', id: 'Saling menghormati peran masing-masing dalam pekerjaan', ne: 'कार्यगत भूमिकाको आपसी सम्मान', th: 'เคารพบทบาทของกันและกันในงาน' } },
-      { label: { ja: '自分の仕事に集中できる環境があること', vi: 'Có môi trường để tập trung vào công việc của mình', zh: '有能让自己专注工作的环境', tl: 'May kapaligiran para makapag-focus sa sariling trabaho', id: 'Ada lingkungan untuk fokus pada pekerjaan sendiri', ne: 'आफ्नो काममा ध्यान दिन सकिने वातावरण हुनु', th: 'มีสภาพแวดล้อมที่ทำให้โฟกัสกับงานตัวเองได้' } },
-    ],
-  },
-  // ===== Q6〜Q10: 誠実性 (Conscientiousness) =====
-  {
-    id: 6, axis: 'conscientiousness', reverseScore: false, referenceOnly: false,
+    id: 4, axis: 'conscientiousness',
     text: {
       ja: '約束した時間に遅れそうなとき、どうしますか？',
       vi: 'Khi có nguy cơ đến trễ giờ hẹn, bạn làm gì?',
@@ -157,7 +129,7 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 7, axis: 'conscientiousness', reverseScore: false, referenceOnly: false,
+    id: 5, axis: 'conscientiousness',
     text: {
       ja: '誰も見ていないとき、職場のルールをどう扱いますか？',
       vi: 'Khi không có ai nhìn, bạn đối xử với nội quy công ty như thế nào?',
@@ -175,7 +147,7 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 8, axis: 'conscientiousness', reverseScore: false, referenceOnly: false,
+    id: 6, axis: 'conscientiousness',
     text: {
       ja: '仕事でミスをしたとき、最初にどうしますか？',
       vi: 'Khi mắc lỗi trong công việc, việc đầu tiên bạn làm là gì?',
@@ -192,45 +164,10 @@ export const questions: Question[] = [
       { label: { ja: 'まず自分で解決を試みる。自力で直せれば問題ない', vi: 'Cố tự giải quyết trước. Nếu sửa được thì không sao', zh: '先自己尝试解决。能自己修好就没问题', tl: 'Subukang ayusin muna. Kung naayos, walang problema', id: 'Mencoba menyelesaikan sendiri dulu. Kalau bisa diperbaiki, tidak masalah', ne: 'पहिले आफैं समाधान गर्ने प्रयास गर्छु। ठिक भए समस्या छैन', th: 'ลองแก้ไขเองก่อน ถ้าแก้ได้ก็ไม่มีปัญหา' } },
     ],
   },
+
+  // ===== Q7〜Q9: 適応力 (Adaptability) =====
   {
-    id: 9, axis: 'conscientiousness', reverseScore: false, referenceOnly: false,
-    text: {
-      ja: '仕事を途中で終わらせなければならない状況になったら？',
-      vi: 'Nếu phải bỏ dở công việc giữa chừng, bạn sẽ làm gì?',
-      zh: '如果不得不中途放弃工作，您会怎么做？',
-      tl: 'Kung kailangan mong iwan ang trabaho sa kalagitnaan, ano ang gagawin mo?',
-      id: 'Jika Anda harus meninggalkan pekerjaan di tengah jalan, apa yang akan Anda lakukan?',
-      ne: 'काम बीचमा छोड्नुपर्ने अवस्था आएमा के गर्नुहुन्छ?',
-      th: 'ถ้าคุณต้องทิ้งงานกลางคัน คุณจะทำอย่างไร?',
-    },
-    choices: [
-      { label: { ja: '引き継ぎ資料を作り、次の人が困らないようにする', vi: 'Tạo tài liệu bàn giao để người sau không gặp khó', zh: '制作交接文档，确保接手的人不会遇到困难', tl: 'Gumawa ng handover document para hindi mahirapan ang susunod', id: 'Membuat dokumen serah terima agar penerus tidak kesulitan', ne: 'हस्तान्तरण सामग्री बनाएर अर्को व्यक्तिलाई सजिलो बनाउँछु', th: 'ทำเอกสารส่งมอบเพื่อให้คนต่อไปไม่ลำบาก' } },
-      { label: { ja: '可能な限り自分で終わらせてから、残りを丁寧に引き継ぐ', vi: 'Hoàn thành nhiều nhất có thể, rồi bàn giao phần còn lại', zh: '尽量自己完成，然后认真交接剩余部分', tl: 'Tapusin hangga\'t maaari, tapos maayos na i-handover ang natitira', id: 'Menyelesaikan sebanyak mungkin, lalu menyerahkan sisanya dengan baik', ne: 'सकेसम्म आफैं सकाएर बाँकी ध्यानपूर्वक हस्तान्तरण गर्छु', th: 'ทำให้เสร็จมากที่สุดเท่าที่ได้แล้วส่งมอบส่วนที่เหลืออย่างรอบคอบ' } },
-      { label: { ja: '状況を説明して、誰かに引き継いでもらう', vi: 'Giải thích tình hình và nhờ người khác tiếp tục', zh: '说明情况，请别人接手', tl: 'Ipaliwanag ang sitwasyon at ipasa sa ibang tao', id: 'Menjelaskan situasi dan meminta orang lain melanjutkan', ne: 'अवस्था बताएर कसैलाई हस्तान्तरण गर्छु', th: 'อธิบายสถานการณ์และให้คนอื่นรับช่วงต่อ' } },
-      { label: { ja: 'やむを得ない状況なので、区切りの良いところで終える', vi: 'Vì bất khả kháng, nên dừng ở chỗ hợp lý', zh: '既然无奈，就在合适的地方收尾', tl: 'Dahil hindi na maiiwasan, tapusin sa magandang punto', id: 'Karena tidak bisa dihindari, berhenti di titik yang tepat', ne: 'लाचार अवस्था भएकोले, उपयुक्त ठाउँमा रोक्छु', th: 'เนื่องจากจำเป็น หยุดที่จุดที่เหมาะสม' } },
-    ],
-  },
-  {
-    id: 10, axis: 'conscientiousness', reverseScore: false, referenceOnly: true,
-    text: {
-      ja: '前の職場を辞めた一番の理由は何ですか？',
-      vi: 'Lý do chính bạn rời công ty trước là gì?',
-      zh: '您离开上一份工作的主要原因是什么？',
-      tl: 'Ano ang pangunahing dahilan ng iyong pag-alis sa dating trabaho?',
-      id: 'Apa alasan utama Anda meninggalkan pekerjaan sebelumnya?',
-      ne: 'अघिल्लो जागिर छोड्नुको मुख्य कारण के थियो?',
-      th: 'เหตุผลหลักที่คุณลาออกจากงานก่อนหน้าคืออะไร?',
-    },
-    choices: [
-      { label: { ja: 'より良い機会を求めて', vi: 'Tìm kiếm cơ hội tốt hơn', zh: '寻求更好的机会', tl: 'Naghahanap ng mas magandang pagkakataon', id: 'Mencari kesempatan yang lebih baik', ne: 'राम्रो अवसर खोजेर', th: 'หาโอกาสที่ดีกว่า' } },
-      { label: { ja: '家族・生活の事情', vi: 'Hoàn cảnh gia đình', zh: '家庭、生活原因', tl: 'Dahil sa pamilya o pamumuhay', id: 'Alasan keluarga atau kehidupan', ne: 'परिवार वा जीवन परिस्थिति', th: 'เหตุผลครอบครัวหรือชีวิต' } },
-      { label: { ja: '職場の人間関係', vi: 'Mối quan hệ tại nơi làm việc', zh: '职场人际关系', tl: 'Relasyon sa trabaho', id: 'Hubungan di tempat kerja', ne: 'कार्यस्थलको मानवीय सम्बन्ध', th: 'ความสัมพันธ์ในที่ทำงาน' } },
-      { label: { ja: '給与・待遇への不満', vi: 'Không hài lòng về lương', zh: '对薪资待遇不满', tl: 'Hindi masaya sa sahod', id: 'Tidak puas dengan gaji', ne: 'तलब र सुविधाप्रति असन्तुष्टि', th: 'ไม่พอใจเงินเดือน' } },
-    ],
-  },
-  // ===== Q11〜Q15: 適応力 (Adaptability) =====
-  {
-    id: 11, axis: 'adaptability', reverseScore: false, referenceOnly: false,
+    id: 7, axis: 'adaptability',
     text: {
       ja: '日本の職場文化（礼儀・報連相など）についてどう思いますか？',
       vi: 'Bạn nghĩ sao về văn hóa làm việc Nhật Bản (lễ nghi, báo cáo liên lạc)?',
@@ -248,7 +185,7 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 12, axis: 'adaptability', reverseScore: false, referenceOnly: false,
+    id: 8, axis: 'adaptability',
     text: {
       ja: '仕事のやり方が突然変わったとき、どのように対応しますか？',
       vi: 'Khi cách làm việc thay đổi đột ngột, bạn ứng phó thế nào?',
@@ -266,7 +203,7 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 13, axis: 'adaptability', reverseScore: false, referenceOnly: false,
+    id: 9, axis: 'adaptability',
     text: {
       ja: '知らない業務を任されたとき、どうしますか？',
       vi: 'Khi được giao công việc chưa biết, bạn làm gì?',
@@ -283,45 +220,10 @@ export const questions: Question[] = [
       { label: { ja: '自分の得意な業務と交換できないか相談する', vi: 'Thương lượng đổi sang công việc mình giỏi hơn', zh: '商量能否换成自己擅长的工作', tl: 'Makipag-usap kung pwedeng palitan ng trabahong alam ko', id: 'Berdiskusi apakah bisa ditukar dengan pekerjaan yang dikuasai', ne: 'आफ्नो दक्ष कामसँग साट्न सकिन्छ कि भनेर सल्लाह गर्छु', th: 'ปรึกษาว่าเปลี่ยนเป็นงานที่ถนัดได้ไหม' } },
     ],
   },
+
+  // ===== Q10〜Q12: 積極性 (Proactivity) =====
   {
-    id: 14, axis: 'adaptability', reverseScore: false, referenceOnly: false,
-    text: {
-      ja: '日本語が上達することについて、どう感じていますか？',
-      vi: 'Bạn cảm thấy thế nào về việc học và cải thiện tiếng Nhật?',
-      zh: '关于提高日语水平，您有什么想法？',
-      tl: 'Paano mo nararamdaman ang pagpapabuti ng iyong Japanese?',
-      id: 'Bagaimana perasaan Anda tentang meningkatkan kemampuan bahasa Jepang?',
-      ne: 'जापानी भाषा सुधार्नेबारे तपाईंलाई कस्तो लाग्छ?',
-      th: 'คุณรู้สึกอย่างไรกับการพัฒนาภาษาญี่ปุ่น?',
-    },
-    choices: [
-      { label: { ja: '仕事以外の場面でも使えるよう積極的に学びたい', vi: 'Muốn học tích cực để dùng được cả ngoài công việc', zh: '想积极学习，在工作以外的场合也能使用', tl: 'Gustong aktibong mag-aral para magamit kahit sa labas ng trabaho', id: 'Ingin belajar secara aktif agar bisa digunakan di luar pekerjaan juga', ne: 'काम बाहेक अन्य ठाउँमा पनि प्रयोग गर्न सक्रिय रूपमा सिक्न चाहन्छु', th: 'อยากเรียนอย่างกระตือรือร้นเพื่อใช้นอกเหนือจากงานด้วย' } },
-      { label: { ja: '仕事で必要なレベルまではしっかり学びたい', vi: 'Muốn học vững đến mức cần thiết cho công việc', zh: '想踏实学到工作需要的水平', tl: 'Gustong mag-aral hanggang sa level na kailangan sa trabaho', id: 'Ingin belajar dengan serius sampai level yang dibutuhkan untuk pekerjaan', ne: 'काममा चाहिने स्तरसम्म राम्ररी सिक्न चाहन्छु', th: 'อยากเรียนอย่างจริงจังถึงระดับที่ต้องการสำหรับงาน' } },
-      { label: { ja: '周りのサポートを借りながら少しずつ覚えたい', vi: 'Muốn học dần với sự hỗ trợ từ người xung quanh', zh: '想借助周围人的帮助慢慢学习', tl: 'Gustong unti-unting matuto sa tulong ng mga kasamahan', id: 'Ingin belajar sedikit demi sedikit dengan bantuan orang sekitar', ne: 'वरिपरिको सहयोग लिँदै बिस्तारै सिक्न चाहन्छु', th: 'อยากค่อยๆ เรียนรู้โดยได้รับการสนับสนุนจากคนรอบข้าง' } },
-      { label: { ja: '仕事で最低限必要な言葉がわかれば十分だと思う', vi: 'Chỉ cần biết ngôn ngữ tối thiểu cần thiết cho công việc là đủ', zh: '觉得只要知道工作最基本的用语就够了', tl: 'Sapat na kung naiintindihan ang pinakakailangang salita sa trabaho', id: 'Merasa cukup jika mengerti bahasa minimum yang diperlukan untuk pekerjaan', ne: 'काममा न्यूनतम चाहिने शब्दहरू जानेसम्म पर्याप्त ठान्छु', th: 'คิดว่าแค่รู้ภาษาขั้นต่ำที่จำเป็นสำหรับงานก็เพียงพอ' } },
-    ],
-  },
-  {
-    id: 15, axis: 'adaptability', reverseScore: false, referenceOnly: true,
-    text: {
-      ja: 'これまでで最も苦労した経験を、どう乗り越えましたか？',
-      vi: 'Bạn đã vượt qua khó khăn lớn nhất trong cuộc sống như thế nào?',
-      zh: '您是如何度过人生中最艰难的经历的？',
-      tl: 'Paano mo nalampasan ang pinakamahirap na karanasan mo sa buhay?',
-      id: 'Bagaimana Anda melewati pengalaman tersulit dalam hidup Anda?',
-      ne: 'अहिलेसम्मको सबभन्दा कठिन अनुभव कसरी पार गर्नुभयो?',
-      th: 'คุณผ่านประสบการณ์ที่ยากที่สุดในชีวิตมาได้อย่างไร?',
-    },
-    choices: [
-      { label: { ja: '人の助けを借りた', vi: 'Nhờ sự giúp đỡ của người khác', zh: '借助他人的帮助', tl: 'Sa tulong ng iba', id: 'Dengan bantuan orang lain', ne: 'अरूको सहायता लिएर', th: 'ขอความช่วยเหลือจากผู้อื่น' } },
-      { label: { ja: '一人で粘り強く取り組んだ', vi: 'Một mình kiên trì cố gắng', zh: '一个人坚持努力', tl: 'Nag-iisang tiyaga', id: 'Berjuang sendiri dengan tekun', ne: 'एक्लै लगनशीलतापूर्वक', th: 'พยายามคนเดียวอย่างมุ่งมั่น' } },
-      { label: { ja: '時間が解決してくれた', vi: 'Thời gian giải quyết', zh: '时间解决了', tl: 'Naayos ng oras', id: 'Waktu yang menyelesaikan', ne: 'समयले समाधान गर्यो', th: 'เวลาแก้ปัญหาให้' } },
-      { label: { ja: '諦めた・まだ解決していない', vi: 'Bỏ cuộc', zh: '放弃了', tl: 'Sumuko', id: 'Menyerah', ne: 'हार मानें', th: 'ยอมแพ้' } },
-    ],
-  },
-  // ===== Q16〜Q20: 積極性 (Proactivity) =====
-  {
-    id: 16, axis: 'proactivity', reverseScore: false, referenceOnly: false,
+    id: 10, axis: 'proactivity',
     text: {
       ja: '仕事中に「もっと良い方法がある」と気づいたとき、どうしますか？',
       vi: 'Khi nhận ra có cách làm việc tốt hơn, bạn sẽ làm gì?',
@@ -339,7 +241,7 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 17, axis: 'proactivity', reverseScore: false, referenceOnly: false,
+    id: 11, axis: 'proactivity',
     text: {
       ja: '空き時間が生まれたとき、あなたはどうしますか？',
       vi: 'Khi có thời gian rảnh trong giờ làm, bạn thường làm gì?',
@@ -357,7 +259,7 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 18, axis: 'proactivity', reverseScore: false, referenceOnly: false,
+    id: 12, axis: 'proactivity',
     text: {
       ja: '5年後の自分の仕事について、どのようなビジョンを持っていますか？',
       vi: 'Bạn có tầm nhìn gì về công việc của mình sau 5 năm?',
@@ -374,8 +276,10 @@ export const questions: Question[] = [
       { label: { ja: 'まずは目の前の仕事をしっかりやることが大事だと思う', vi: 'Nghĩ rằng trước hết phải làm tốt công việc trước mắt', zh: '觉得首先要做好眼前的工作', tl: 'Sa tingin ko mahalaga munang gawin nang maayos ang trabaho ngayon', id: 'Menurut saya yang penting adalah mengerjakan pekerjaan di depan mata dengan baik', ne: 'पहिले सामुन्नेको काम राम्ररी गर्नु महत्त्वपूर्ण ठान्छु', th: 'คิดว่าสิ่งสำคัญคือทำงานตรงหน้าให้ดีก่อน' } },
     ],
   },
+
+  // ===== Q13〜Q15: ストレス耐性 (Stress Tolerance) =====
   {
-    id: 19, axis: 'proactivity', reverseScore: false, referenceOnly: false,
+    id: 13, axis: 'stressTolerance',
     text: {
       ja: '上司から厳しいフィードバックをもらったとき、どう感じますか？',
       vi: 'Khi nhận phản hồi gay gắt từ cấp trên, bạn cảm thấy thế nào?',
@@ -393,21 +297,39 @@ export const questions: Question[] = [
     ],
   },
   {
-    id: 20, axis: 'proactivity', reverseScore: false, referenceOnly: true,
+    id: 14, axis: 'stressTolerance',
     text: {
-      ja: 'この会社・仕事に、あなたが一番期待していることは何ですか？',
-      vi: 'Điều bạn kỳ vọng nhất ở công ty và công việc này là gì?',
-      zh: '您对这份工作最大的期待是什么？',
-      tl: 'Ano ang pinaka-inaasahan mo sa kumpanya at trabahong ito?',
-      id: 'Apa yang paling Anda harapkan dari perusahaan dan pekerjaan ini?',
-      ne: 'यस कम्पनी र कामबाट तपाईंले सबभन्दा बढी के अपेक्षा गर्नुहुन्छ?',
-      th: 'สิ่งที่คุณคาดหวังมากที่สุดจากบริษัทและงานนี้คืออะไร?',
+      ja: '慣れない環境で孤独や不安を感じたとき、どのように対処しますか？',
+      vi: 'Khi cảm thấy cô đơn hay lo lắng trong môi trường mới, bạn đối phó thế nào?',
+      zh: '在陌生环境中感到孤独或不安时，您如何应对？',
+      tl: 'Kapag nakakaramdam ka ng kalungkutan o pagkabalisa sa bagong kapaligiran, paano ka nakakayanan?',
+      id: 'Saat merasa kesepian atau cemas di lingkungan baru, bagaimana Anda mengatasinya?',
+      ne: 'नयाँ वातावरणमा एक्लोपन वा चिन्ता महसुस गर्दा, कसरी सामना गर्नुहुन्छ?',
+      th: 'เมื่อรู้สึกเหงาหรือวิตกกังวลในสภาพแวดล้อมใหม่ คุณรับมืออย่างไร?',
     },
     choices: [
-      { label: { ja: 'スキルアップ・成長', vi: 'Nâng cao kỹ năng và phát triển', zh: '提升技能与成长', tl: 'Pag-unlad ng kasanayan at paglago', id: 'Peningkatan kemampuan dan pertumbuhan', ne: 'सीप वृद्धि र विकास', th: 'พัฒนาทักษะและเติบโต' } },
-      { label: { ja: '安定した収入', vi: 'Thu nhập ổn định', zh: '稳定的收入', tl: 'Matatag na kita', id: 'Pendapatan yang stabil', ne: 'स्थिर आम्दानी', th: 'รายได้ที่มั่นคง' } },
-      { label: { ja: '良い人間関係', vi: 'Môi trường làm việc tốt', zh: '良好的人际关系', tl: 'Magandang kapaligiran', id: 'Lingkungan kerja yang baik', ne: 'राम्रो कार्य वातावरण', th: 'สภาพแวดล้อมการทำงานที่ดี' } },
-      { label: { ja: 'その他', vi: 'Khác', zh: '其他', tl: 'Iba pa', id: 'Lainnya', ne: 'अन्य', th: 'อื่น ๆ' } },
+      { label: { ja: '気持ちを整理して、信頼できる人に相談する', vi: 'Sắp xếp cảm xúc và tham khảo ý kiến người đáng tin cậy', zh: '整理好心情，找信任的人倾诉', tl: 'Ayusin ang nararamdaman at kumonsulta sa taong mapagkakatiwalaan', id: 'Merapikan perasaan dan berkonsultasi dengan orang yang dipercaya', ne: 'भावना मिलाएर विश्वासयोग्य व्यक्तिसँग सल्लाह गर्छु', th: 'จัดการอารมณ์แล้วปรึกษาคนที่ไว้ใจ' } },
+      { label: { ja: '趣味や運動など、自分なりの方法でリフレッシュする', vi: 'Làm mới bản thân bằng sở thích, thể dục, v.v.', zh: '通过爱好或运动等方式来放松自己', tl: 'Mag-refresh sa sariling paraan tulad ng hobby o exercise', id: 'Menyegarkan diri dengan cara sendiri seperti hobi atau olahraga', ne: 'शौक वा व्यायाम जस्ता आफ्ना तरिकाले ताजा हुन्छु', th: 'ผ่อนคลายด้วยวิธีของตัวเอง เช่น งานอดิเรกหรือออกกำลังกาย' } },
+      { label: { ja: '時間が経てば慣れると思い、じっと耐える', vi: 'Nghĩ rằng sẽ quen khi thời gian trôi qua và chịu đựng', zh: '觉得时间久了就会习惯，默默忍耐', tl: 'Tiisin na lang dahil masasanay din sa paglipas ng oras', id: 'Bertahan karena berpikir akan terbiasa seiring waktu', ne: 'समय बित्दा बस्ने ठान्दै सहन गर्छु', th: 'อดทนไป คิดว่าเวลาผ่านไปจะชินเอง' } },
+      { label: { ja: '慣れた環境にできるだけ早く戻りたいと思う', vi: 'Muốn quay lại môi trường quen thuộc càng sớm càng tốt', zh: '想尽快回到熟悉的环境', tl: 'Gustong bumalik sa dating kapaligiran sa lalong madaling panahon', id: 'Ingin kembali ke lingkungan yang familiar secepat mungkin', ne: 'सकेसम्म चाँडो चिनेको वातावरणमा फर्कन चाहन्छु', th: 'อยากกลับไปสภาพแวดล้อมที่คุ้นเคยโดยเร็วที่สุด' } },
+    ],
+  },
+  {
+    id: 15, axis: 'stressTolerance',
+    text: {
+      ja: '忙しい日が何日も続いたとき、あなたはどうしますか？',
+      vi: 'Khi những ngày bận rộn kéo dài liên tục, bạn làm gì?',
+      zh: '当忙碌的日子持续了很多天，您会怎么做？',
+      tl: 'Kapag maraming araw na sunod-sunod ang abalang araw, ano ang gagawin mo?',
+      id: 'Saat hari-hari sibuk berlangsung terus-menerus, apa yang Anda lakukan?',
+      ne: 'धेरै दिनसम्म व्यस्त दिनहरू लगातार जारी रहँदा, तपाईं के गर्नुहुन्छ?',
+      th: 'เมื่อวันที่ยุ่งต่อเนื่องกันหลายวัน คุณจะทำอย่างไร?',
+    },
+    choices: [
+      { label: { ja: '優先順位をつけて、一つずつ着実に片付ける', vi: 'Đặt thứ tự ưu tiên và xử lý từng việc một cách chắc chắn', zh: '按优先级排序，一件件踏实地完成', tl: 'Mag-prioritize at tapusin nang paisa-isa at matatag', id: 'Memprioritaskan dan menyelesaikan satu per satu secara mantap', ne: 'प्राथमिकता तोकेर एक-एक गरी पक्का रूपमा सकाउँछु', th: 'จัดลำดับความสำคัญแล้วจัดการทีละอย่างอย่างมั่นคง' } },
+      { label: { ja: '周りと協力して、お互いの負担を軽くする', vi: 'Hợp tác với mọi người xung quanh để giảm bớt gánh nặng cho nhau', zh: '与周围的人合作，减轻彼此的负担', tl: 'Makipagtulungan sa mga kasamahan para pagaanin ang load ng bawat isa', id: 'Bekerja sama dengan rekan untuk meringankan beban masing-masing', ne: 'वरिपरिसँग सहकार्य गरी एक-अर्काको बोझ हलुका बनाउँछु', th: 'ร่วมมือกับคนรอบข้างเพื่อแบ่งเบาภาระซึ่งกันและกัน' } },
+      { label: { ja: '体調に気をつけながら、できる限り頑張り続ける', vi: 'Cố gắng hết sức trong khi chú ý sức khỏe', zh: '注意身体状况，尽力坚持', tl: 'Patuloy na magsumikap habang nag-iingat sa kalusugan', id: 'Terus berusaha sambil menjaga kesehatan', ne: 'स्वास्थ्यमा ध्यान दिँदै, सकेसम्म मेहनत गरिरहन्छु', th: 'พยายามต่อไปเท่าที่ได้ โดยระวังสุขภาพ' } },
+      { label: { ja: 'プレッシャーで集中力が落ちてしまうことがある', vi: 'Đôi khi áp lực làm giảm khả năng tập trung', zh: '有时压力会导致注意力下降', tl: 'Minsan bumababa ang focus dahil sa pressure', id: 'Kadang tekanan membuat konsentrasi menurun', ne: 'दबाबले कहिलेकाहीं एकाग्रता घट्छ', th: 'บางครั้งความกดดันทำให้สมาธิลดลง' } },
     ],
   },
 ];

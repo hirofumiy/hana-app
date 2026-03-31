@@ -5,7 +5,7 @@ import { sendResultNotification } from '@/lib/email';
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { id, candidateName, companyCode, language, answers, scores, referenceAnswers, completedAt } = body;
+  const { id, candidateName, companyCode, language, answers, scores, industryScore, completedAt } = body;
 
   if (!id || !companyCode || !scores) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     language,
     answers,
     scores,
-    reference_answers: referenceAnswers,
+    industry_score: industryScore ?? null,
     completed_at: completedAt,
   });
 
@@ -37,11 +37,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to save result' }, { status: 500 });
   }
 
-  // AI分析を生成 → メール通知（レスポンス前に完了させる）
+  // AI分析を生成 → メール通知
   if (company?.admin_email) {
     const origin = request.headers.get('origin') || 'https://hana-app-ten.vercel.app';
     try {
-      // AI分析を生成
       let aiComment = null;
       const apiKey = process.env.ANTHROPIC_API_KEY;
       if (apiKey) {
@@ -54,12 +53,12 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify({
             model: 'claude-sonnet-4-20250514',
-            max_tokens: 500,
+            max_tokens: 600,
             system: `あなたは外国人採用の専門家AIです。特性テストのスコアから採用担当者向けの日本語レポートをJSONで返してください。
-ルール：断定ではなく「〜の傾向があります」の表現を使う。ネガティブ評価は「注意点」として記述（差別的表現・国籍への言及は絶対禁止）。採用担当者が具体的に動けるアクションを必ず含める。200〜250文字以内。
-出力形式（JSONのみ）：{"judgment":"A or B or C or D","summary":"強みの要約60文字以内","strength":"強み詳細80文字以内","caution":"注意点60文字以内（なければ空文字）","action":"採用後にやること80文字以内","interview_questions":["面接質問1","面接質問2"]}
-判定基準：A判定=4軸平均75点以上かつ誠実性70点以上、B判定=4軸平均60点以上、C判定=誠実性or適応力55点未満、D判定=4軸平均50点未満or誠実性40点未満`,
-            messages: [{ role: 'user', content: `候補者名: ${candidateName || '(未入力)'}\n協調性: ${scores.agreeableness}/100\n誠実性: ${scores.conscientiousness}/100\n適応力: ${scores.adaptability}/100\n積極性: ${scores.proactivity}/100\n前職退職理由: ${referenceAnswers?.q10 || '(未回答)'}\n期待: ${referenceAnswers?.q20 || '(未回答)'}` }],
+ルール：断定ではなく「〜の傾向があります」の表現を使う。ネガティブ評価は「注意点」として記述（差別的表現・国籍への言及は絶対禁止）。採用担当者が具体的に動けるアクションを必ず含める。
+出力形式（JSONのみ）：{"judgment":"A or B or C or D","summary":"強みの要約80文字以内","strength":"強み詳細100文字以内","caution":"注意点80文字以内（なければ空文字）","action":"採用後にやること100文字以内","interview_questions":["面接質問1","面接質問2"]}
+判定基準：A判定=5軸平均75点以上かつ誠実性70点以上かつストレス耐性60点以上、B判定=5軸平均60点以上、C判定=誠実性or適応力50点未満、D判定=5軸平均40点未満or誠実性35点未満orストレス耐性30点未満`,
+            messages: [{ role: 'user', content: `候補者名: ${candidateName || '(未入力)'}\n協調性: ${scores.agreeableness}/100\n誠実性: ${scores.conscientiousness}/100\n適応力: ${scores.adaptability}/100\n積極性: ${scores.proactivity}/100\nストレス耐性: ${scores.stressTolerance}/100\n業種適性: ${industryScore ?? '(未測定)'}/100` }],
           }),
         });
         if (aiRes.ok) {
@@ -68,7 +67,6 @@ export async function POST(request: Request) {
           const jsonMatch = text.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             aiComment = JSON.parse(jsonMatch[0]);
-            // DBにキャッシュ保存
             await supabase.from('test_results').update({ ai_comment: aiComment }).eq('id', id);
           }
         }

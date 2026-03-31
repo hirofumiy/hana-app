@@ -6,6 +6,7 @@ CREATE TABLE companies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_code TEXT UNIQUE NOT NULL,
   company_name TEXT NOT NULL,
+  industry TEXT NOT NULL DEFAULT 'general',
   admin_email TEXT NOT NULL,
   admin_user_id UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT now()
@@ -21,6 +22,7 @@ CREATE TABLE test_results (
   language TEXT NOT NULL DEFAULT 'ja',
   answers JSONB NOT NULL DEFAULT '{}',
   scores JSONB NOT NULL DEFAULT '{}',
+  industry_score INTEGER,
   reference_answers JSONB NOT NULL DEFAULT '{}',
   ai_comment JSONB,
   completed_at TIMESTAMPTZ NOT NULL,
