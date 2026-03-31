@@ -19,22 +19,13 @@ export interface TestResult {
   completedAt: string;
 }
 
-// 逆スコア設問: Q7, Q8, Q9, Q11, Q13, Q19
 // 参考設問(計算外): Q10, Q15, Q20
+// v2: 全問統一スコア（選択肢の並び順 = スコア順）
 
 function getScore(question: Question, choiceIndex: number): number {
   if (question.referenceOnly) return 0;
-
-  const normalScores = [4, 3, 2, 1]; // A=4, B=3, C=2, D=1
-  const reverseScores = [1, 2, 3, 4]; // A=1, B=2, C=3, D=4 (逆スコアだが高い方が良いので実質同じ意味で反転)
-
-  // 逆スコア設問は、Aが「良い回答」なので高得点を付ける
-  // 仕様: 逆スコア設問 A=1, B=2, C=3, D=4 だが、これは「Aが良い回答で4点相当」の意味
-  // → 実際はA=4, B=3, C=2, D=1で統一（逆スコアの意味は選択肢の文面が逆転しているため）
-  if (question.reverseScore) {
-    return reverseScores[choiceIndex] ?? 0;
-  }
-  return normalScores[choiceIndex] ?? 0;
+  const scores = [4, 3, 2, 1]; // index 0=4点, index 1=3点, index 2=2点, index 3=1点
+  return scores[choiceIndex] ?? 0;
 }
 
 export function calculateScores(answers: Record<number, number>): Scores {

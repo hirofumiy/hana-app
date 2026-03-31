@@ -1,4 +1,5 @@
 // Hana 採用前特性テスト - 全20問 7言語データ
+// v2: 社会的望ましさバイアスを低減した選択肢設計
 
 export type Language = 'ja' | 'vi' | 'zh' | 'tl' | 'id' | 'ne' | 'th';
 
@@ -12,7 +13,7 @@ export interface Question {
   reverseScore: boolean;
   referenceOnly: boolean; // スコア計算外
   text: Record<Language, string>;
-  choices: [Choice, Choice, Choice, Choice]; // A, B, C, D
+  choices: [Choice, Choice, Choice, Choice]; // A, B, C, D（スコア順: 4, 3, 2, 1）
 }
 
 export const LANGUAGES: { code: Language; flag: string; name: string }[] = [
@@ -58,10 +59,10 @@ export const questions: Question[] = [
       th: 'เมื่อเพื่อนร่วมงานมีปัญหา คุณมักทำอะไร?',
     },
     choices: [
-      { label: { ja: '積極的に手伝う', vi: 'Chủ động giúp đỡ', zh: '主动帮助', tl: 'Aktibong tinutulungan', id: 'Aktif membantu', ne: 'सक्रिय रूपमा मद्दत गर्छु', th: 'ช่วยเหลืออย่างแข็งขัน' } },
-      { label: { ja: '求められたら手伝う', vi: 'Giúp khi được yêu cầu', zh: '被请求时帮助', tl: 'Tumutulong kapag hiningi', id: 'Membantu jika diminta', ne: 'मागेमा मद्दत गर्छु', th: 'ช่วยเมื่อถูกขอ' } },
-      { label: { ja: '見守る', vi: 'Quan sát và chờ', zh: '在旁观察', tl: 'Pinagmamasdan lang', id: 'Mengamati saja', ne: 'हेरिरहन्छु', th: 'แค่ดูอยู่' } },
-      { label: { ja: '関わらない', vi: 'Không liên quan đến tôi', zh: '不想参与', tl: 'Hindi ko pakialam', id: 'Tidak peduli', ne: 'मलाई सरोकार छैन', th: 'ไม่เกี่ยวกับฉัน' } },
+      { label: { ja: '自分の仕事を調整してでも「手伝おうか」と声をかける', vi: 'Điều chỉnh công việc của mình để hỏi "Tôi giúp được gì không?"', zh: '调整自己的工作，主动问"需要帮忙吗？"', tl: 'Iaadjust ang sariling trabaho para itanong "Kailangan mo ba ng tulong?"', id: 'Menyesuaikan pekerjaan sendiri untuk menawarkan bantuan', ne: 'आफ्नो काम मिलाएर "मद्दत गरौं?" भनेर सोध्छु', th: 'ปรับงานตัวเองเพื่อเอ่ยปากถามว่า "ช่วยอะไรได้ไหม?"' } },
+      { label: { ja: '相手の様子を見て、困っていそうなら声をかける', vi: 'Quan sát và hỏi thăm nếu thấy họ gặp khó khăn', zh: '观察对方，看起来有困难就上前询问', tl: 'Pagmamasdan muna, kakausapin kung mukhang nahihirapan', id: 'Mengamati situasi, menawarkan bantuan jika terlihat kesulitan', ne: 'अवस्था हेरेर, गाह्रो देखिए सोध्छु', th: 'สังเกตดูก่อน ถ้าเห็นว่าลำบากจะเข้าไปถาม' } },
+      { label: { ja: '聞かれたら手伝うが、自分からは声をかけないタイプ', vi: 'Sẽ giúp nếu được hỏi, nhưng không chủ động hỏi', zh: '被问到就帮忙，但不会主动询问', tl: 'Tutulong kung hihilingin, pero hindi unang magtanong', id: 'Membantu jika diminta, tapi tidak menawarkan duluan', ne: 'सोधे मद्दत गर्छु, तर आफैं सोध्दिन', th: 'ช่วยถ้าถูกถาม แต่ไม่ใช่คนที่จะถามก่อน' } },
+      { label: { ja: 'まず自分の仕事を終わらせる。相手も自分で解決したいかもしれない', vi: 'Hoàn thành việc mình trước. Họ có thể muốn tự giải quyết', zh: '先完成自己的工作。对方可能也想自己解决', tl: 'Tatapusin muna ang sariling trabaho. Baka gusto nilang ayusin nila mismo', id: 'Menyelesaikan pekerjaan sendiri dulu. Mereka mungkin ingin menyelesaikan sendiri', ne: 'पहिले आफ्नो काम सिद्ध्याउँछु। उनी पनि आफैं समाधान गर्न चाहन्छन् होला', th: 'ทำงานตัวเองให้เสร็จก่อน เขาอาจอยากแก้ปัญหาเอง' } },
     ],
   },
   {
@@ -76,10 +77,10 @@ export const questions: Question[] = [
       th: 'เมื่อการตัดสินใจของทีมแตกต่างจากความเห็นของคุณ คุณจะทำอย่างไร?',
     },
     choices: [
-      { label: { ja: '意見を伝えた上で従う', vi: 'Nói ý kiến rồi làm theo', zh: '表达意见后服从', tl: 'Sinasabi ang opinyon, tapos susunod', id: 'Menyampaikan pendapat lalu mengikuti', ne: 'मत राखेर पनि पालना गर्छु', th: 'บอกความเห็นแล้วปฏิบัติตาม' } },
-      { label: { ja: '黙って従う', vi: 'Im lặng làm theo', zh: '默默服从', tl: 'Tahimik na susunod', id: 'Diam dan mengikuti', ne: 'चुपचाप पालना गर्छु', th: 'เงียบและปฏิบัติตาม' } },
-      { label: { ja: '強く主張する', vi: 'Phản đối mạnh mẽ', zh: '强烈坚持己见', tl: 'Matibay na magtatalo', id: 'Bersikeras dengan pendapat sendiri', ne: 'कडाइसाथ आफ्नो मत अडान गर्छु', th: 'ยืนกรานอย่างแข็งกร้าว' } },
-      { label: { ja: '別行動を取る', vi: 'Hành động theo ý mình', zh: '按自己的方式行动', tl: 'Gagawa ng sariling paraan', id: 'Bertindak sesuai keinginan sendiri', ne: 'आफ्नै तरिकामा काम गर्छु', th: 'ทำตามวิธีของตัวเอง' } },
+      { label: { ja: '自分の考えを共有した上で、チームの結論に合わせる', vi: 'Chia sẻ ý kiến rồi đồng ý với kết luận của nhóm', zh: '分享自己的想法后，配合团队的结论', tl: 'Ibabahagi ang opinyon, tapos susunod sa desisyon ng grupo', id: 'Menyampaikan pendapat lalu mengikuti keputusan tim', ne: 'आफ्नो विचार राखेर टोलीको निष्कर्ष मान्छु', th: 'แบ่งปันความคิดแล้วปฏิบัติตามข้อสรุปของทีม' } },
+      { label: { ja: 'まずチームの方針で動き、気になる点は後から相談する', vi: 'Làm theo nhóm trước, hỏi thêm sau nếu có thắc mắc', zh: '先按团队方针行动，有疑虑之后再商量', tl: 'Sundin muna ang grupo, tapos i-raise ang concern mamaya', id: 'Mengikuti arahan tim dulu, konsultasi belakangan jika ada kekhawatiran', ne: 'पहिले टोलीको योजनामा लाग्छु, पछि चासो लागेका कुरा छलफल गर्छु', th: 'ทำตามทีมก่อน แล้วค่อยปรึกษาทีหลังถ้ามีข้อสงสัย' } },
+      { label: { ja: '納得できるまで理由を確認してから行動に移す', vi: 'Xác nhận lý do cho đến khi hiểu rõ rồi mới hành động', zh: '确认原因直到理解为止，然后再行动', tl: 'Kumpirmahin ang dahilan hanggang maging satisfied bago kumilos', id: 'Mengonfirmasi alasan sampai paham, baru bertindak', ne: 'बुझ्ने नभएसम्म कारण बुझेर मात्र काम गर्छु', th: 'ยืนยันเหตุผลจนเข้าใจก่อนจึงลงมือทำ' } },
+      { label: { ja: '自分なりのやり方も並行して試してみる', vi: 'Song song thử cách làm của riêng mình', zh: '同时尝试自己的方法', tl: 'Subukan din ang sariling paraan kasabay', id: 'Mencoba cara sendiri secara bersamaan', ne: 'आफ्नो तरिका पनि समानान्तर रूपमा प्रयास गर्छु', th: 'ลองวิธีของตัวเองไปพร้อมกันด้วย' } },
     ],
   },
   {
@@ -94,28 +95,28 @@ export const questions: Question[] = [
       th: 'เมื่อเกิดปัญหาที่ทำงาน สิ่งแรกที่คุณทำคืออะไร?',
     },
     choices: [
-      { label: { ja: '上司に報告する', vi: 'Báo cáo cấp trên ngay', zh: '立即向上级报告', tl: 'Mag-uulat agad sa superyor', id: 'Melaporkan ke atasan segera', ne: 'माथिल्लो अधिकारीलाई रिपोर्ट गर्छु', th: 'รายงานหัวหน้าทันที' } },
-      { label: { ja: '同僚と相談する', vi: 'Hỏi ý kiến đồng nghiệp', zh: '与同事商量', tl: 'Kakausapin ang mga katrabaho', id: 'Berdiskusi dengan rekan kerja', ne: 'सहकर्मीसँग सल्लाह गर्छु', th: 'ปรึกษาเพื่อนร่วมงาน' } },
-      { label: { ja: '自分で解決する', vi: 'Tự giải quyết', zh: '自己解决', tl: 'Ayusin mismo', id: 'Menyelesaikan sendiri', ne: 'आफैं समाधान गर्छु', th: 'แก้ไขเอง' } },
-      { label: { ja: '様子を見る', vi: 'Chờ xem tình hình', zh: '观察情况', tl: 'Hihintayin ang mangyayari', id: 'Menunggu perkembangan', ne: 'कुरा हेर्छु', th: 'รอดูสถานการณ์' } },
+      { label: { ja: 'まず周りに状況を共有し、一緒に対応を考える', vi: 'Chia sẻ tình hình với mọi người và cùng nhau tìm cách giải quyết', zh: '先跟周围人分享情况，一起想办法', tl: 'I-share muna ang sitwasyon sa iba at mag-isip ng solusyon', id: 'Berbagi situasi dengan rekan dan mencari solusi bersama', ne: 'पहिले वरिपरिसँग अवस्था साझा गरी सँगै समाधान खोज्छु', th: 'แชร์สถานการณ์กับคนรอบข้างก่อนและคิดหาทางออกร่วมกัน' } },
+      { label: { ja: '状況を整理してから上司に報告する', vi: 'Sắp xếp tình hình rồi báo cáo cấp trên', zh: '整理情况后向上级报告', tl: 'Ayusin ang sitwasyon bago mag-report sa boss', id: 'Menyusun situasi lalu melapor ke atasan', ne: 'अवस्था मिलाएर माथिल्लो अधिकारीलाई रिपोर्ट गर्छु', th: 'จัดการสถานการณ์ให้เรียบร้อยก่อนรายงานหัวหน้า' } },
+      { label: { ja: 'まず自分で対処を試み、必要なら相談する', vi: 'Thử tự giải quyết trước, hỏi nếu cần', zh: '先自己尝试处理，必要时再咨询', tl: 'Susubukang ayusin muna, magtatanong kung kailangan', id: 'Mencoba menangani sendiri dulu, berkonsultasi jika perlu', ne: 'पहिले आफैं प्रयास गर्छु, आवश्यक भए सल्लाह लिन्छु', th: 'ลองจัดการเองก่อน ถ้าจำเป็นค่อยปรึกษา' } },
+      { label: { ja: '冷静に状況を見極めてから、最適なタイミングで動く', vi: 'Bình tĩnh đánh giá tình hình, hành động đúng thời điểm', zh: '冷静观察情况，在最佳时机采取行动', tl: 'Kalmadong suriin ang sitwasyon at kumilos sa tamang oras', id: 'Dengan tenang menilai situasi, bertindak di waktu yang tepat', ne: 'शान्त रूपमा अवस्था बुझेर उचित समयमा काम गर्छु', th: 'ประเมินสถานการณ์อย่างใจเย็นแล้วลงมือในจังหวะที่เหมาะสม' } },
     ],
   },
   {
     id: 4, axis: 'agreeableness', reverseScore: false, referenceOnly: false,
     text: {
-      ja: '言葉が通じない同僚と一緒に働くことをどう思いますか？',
-      vi: 'Bạn nghĩ thế nào về việc làm việc cùng người không hiểu ngôn ngữ của nhau?',
-      zh: '与语言不通的同事一起工作，您怎么看？',
-      tl: 'Paano mo mararamdaman ang pagtrabaho kasama ng hindi mo maintindihan ang wika?',
-      id: 'Apa pendapat Anda tentang bekerja bersama rekan yang tidak bisa berkomunikasi dalam bahasa yang sama?',
-      ne: 'भाषा नबुझिने सहकर्मीसँग काम गर्ने बारे तपाईंको के विचार छ?',
-      th: 'คุณคิดอย่างไรกับการทำงานร่วมกับเพื่อนที่ไม่เข้าใจภาษาเดียวกัน?',
+      ja: '言葉が通じにくい同僚と一緒に作業することになったら？',
+      vi: 'Nếu phải làm việc cùng đồng nghiệp khó giao tiếp vì ngôn ngữ?',
+      zh: '如果要和语言不通的同事一起工作，您会怎样？',
+      tl: 'Kung kailangan mong magtrabaho kasama ang isang kasamang mahirap kausapin dahil sa wika?',
+      id: 'Jika Anda harus bekerja bersama rekan yang sulit berkomunikasi karena bahasa?',
+      ne: 'भाषा बुझ्न गाह्रो हुने सहकर्मीसँग काम गर्नुपर्दा?',
+      th: 'ถ้าต้องทำงานกับเพื่อนร่วมงานที่สื่อสารทางภาษาได้ยาก?',
     },
     choices: [
-      { label: { ja: '問題ない・助け合える', vi: 'Không vấn đề, hỗ trợ nhau được', zh: '没问题，可以互相帮助', tl: 'Walang problema, makakatulong tayo', id: 'Tidak masalah, bisa saling membantu', ne: 'समस्या छैन, एकअर्कालाई मद्दत गर्न सकिन्छ', th: 'ไม่มีปัญหา ช่วยเหลือกันได้' } },
-      { label: { ja: '少し難しいが大丈夫', vi: 'Hơi khó nhưng ổn', zh: '有点难但没关系', tl: 'Medyo mahirap pero okay', id: 'Agak sulit tapi tidak apa-apa', ne: 'अलि गाह्रो छ तर ठिकै छ', th: 'ยากนิดหน่อย แต่ไม่เป็นไร' } },
-      { label: { ja: 'なるべく避けたい', vi: 'Muốn tránh nếu có thể', zh: '尽量避免', tl: 'Gusto kong iwasan', id: 'Ingin menghindari jika bisa', ne: 'सम्भव भए टाढा रहन चाहन्छु', th: 'อยากหลีกเลี่ยงถ้าทำได้' } },
-      { label: { ja: 'とても嫌だ', vi: 'Rất không thích', zh: '非常不喜欢', tl: 'Hindi ko gusto', id: 'Sangat tidak suka', ne: 'मलाई एकदमै मन पर्दैन', th: 'ไม่ชอบเลย' } },
+      { label: { ja: '翻訳アプリやジェスチャーなど工夫して積極的にやり取りする', vi: 'Tích cực giao tiếp bằng ứng dụng dịch, cử chỉ, v.v.', zh: '用翻译软件、手势等积极沟通', tl: 'Aktibong makipag-usap gamit ang translator app, gestures, atbp.', id: 'Aktif berkomunikasi dengan aplikasi penerjemah, gestur, dll.', ne: 'अनुवाद एप र इशाराहरू प्रयोग गरी सक्रिय रूपमा कुराकानी गर्छु', th: 'สื่อสารอย่างกระตือรือร้นด้วยแอปแปลภาษา ท่าทาง ฯลฯ' } },
+      { label: { ja: '必要な情報は伝え合い、少しずつ関係を築いていく', vi: 'Trao đổi thông tin cần thiết, từ từ xây dựng mối quan hệ', zh: '交流必要的信息，慢慢建立关系', tl: 'Magpalitan ng kinakailangang impormasyon, unti-unting bumuo ng relasyon', id: 'Bertukar informasi penting, perlahan membangun hubungan', ne: 'आवश्यक जानकारी आदानप्रदान गरी बिस्तारै सम्बन्ध बनाउँछु', th: 'สื่อสารข้อมูลที่จำเป็นและค่อยๆ สร้างความสัมพันธ์' } },
+      { label: { ja: '仕事に必要なやり取りを丁寧に行う', vi: 'Giao tiếp những gì cần cho công việc một cách cẩn thận', zh: '认真进行工作所需的沟通', tl: 'Maingat na makipag-usap para sa mga kailangan sa trabaho', id: 'Melakukan komunikasi yang diperlukan untuk pekerjaan dengan cermat', ne: 'कामका लागि आवश्यक कुराकानी ध्यानपूर्वक गर्छु', th: 'สื่อสารเรื่องงานที่จำเป็นอย่างรอบคอบ' } },
+      { label: { ja: 'お互いの得意分野で分担して、効率よく進める', vi: 'Phân công theo thế mạnh của mỗi người, làm việc hiệu quả', zh: '按各自擅长的领域分工，高效推进', tl: 'Hatiin ang trabaho ayon sa lakas ng bawat isa, gawin nang mahusay', id: 'Membagi tugas sesuai keahlian masing-masing, bekerja efisien', ne: 'आ-आफ्नो क्षमताअनुसार बाँडेर कुशलतापूर्वक अगाडि बढ्छु', th: 'แบ่งงานตามจุดแข็งของกันและกัน ทำงานอย่างมีประสิทธิภาพ' } },
     ],
   },
   {
@@ -130,10 +131,10 @@ export const questions: Question[] = [
       th: 'สิ่งที่คุณให้ความสำคัญมากที่สุดในความสัมพันธ์ในที่ทำงานคืออะไร?',
     },
     choices: [
-      { label: { ja: '信頼と助け合い', vi: 'Tin tưởng và hỗ trợ lẫn nhau', zh: '相互信任与帮助', tl: 'Tiwala at pagtutulungan', id: 'Kepercayaan dan saling membantu', ne: 'विश्वास र आपसी सहयोग', th: 'ความไว้วางใจและช่วยเหลือกัน' } },
-      { label: { ja: '礼儀と距離感', vi: 'Lịch sự và giữ khoảng cách', zh: '礼貌与适当距离', tl: 'Kagalangan at tamang distansya', id: 'Kesopanan dan jarak yang tepat', ne: 'शिष्टाचार र उचित दूरी', th: 'มารยาทและระยะห่างที่เหมาะสม' } },
-      { label: { ja: '仕事の成果', vi: 'Kết quả công việc', zh: '工作成果', tl: 'Resulta ng trabaho', id: 'Hasil kerja', ne: 'कामको नतिजा', th: 'ผลการทำงาน' } },
-      { label: { ja: 'お互い干渉しない', vi: 'Không can thiệp nhau', zh: '互不干涉', tl: 'Huwag makialam sa isa\'t isa', id: 'Tidak saling mencampuri urusan', ne: 'एकअर्काको काममा हस्तक्षेप नगर्नु', th: 'ไม่ยุ่งเกี่ยวกัน' } },
+      { label: { ja: 'お互いの状況を理解し、自然に助け合える関係', vi: 'Hiểu hoàn cảnh của nhau và tự nhiên hỗ trợ lẫn nhau', zh: '互相理解彼此的处境，自然地互帮互助', tl: 'Pag-unawa sa sitwasyon ng bawat isa at natural na pagtutulungan', id: 'Saling memahami situasi dan secara alami saling membantu', ne: 'एकअर्काको अवस्था बुझेर स्वाभाविक रूपमा सहयोग गर्ने सम्बन्ध', th: 'เข้าใจสถานการณ์ของกันและกันและช่วยเหลือกันอย่างเป็นธรรมชาติ' } },
+      { label: { ja: '困ったときに気軽に相談できる関係', vi: 'Mối quan hệ mà có thể thoải mái nhờ giúp khi gặp khó khăn', zh: '遇到困难时能轻松商量的关系', tl: 'Relasyong komportableng humingi ng tulong kapag nahihirapan', id: 'Hubungan di mana bisa dengan mudah berkonsultasi saat kesulitan', ne: 'गाह्रो परेमा सजिलैसँग सल्लाह गर्न सकिने सम्बन्ध', th: 'ความสัมพันธ์ที่ปรึกษาได้สบายใจเมื่อมีปัญหา' } },
+      { label: { ja: '仕事上の役割を尊重し合えること', vi: 'Tôn trọng vai trò của nhau trong công việc', zh: '互相尊重工作角色', tl: 'Magalang sa papel ng bawat isa sa trabaho', id: 'Saling menghormati peran masing-masing dalam pekerjaan', ne: 'कार्यगत भूमिकाको आपसी सम्मान', th: 'เคารพบทบาทของกันและกันในงาน' } },
+      { label: { ja: '自分の仕事に集中できる環境があること', vi: 'Có môi trường để tập trung vào công việc của mình', zh: '有能让自己专注工作的环境', tl: 'May kapaligiran para makapag-focus sa sariling trabaho', id: 'Ada lingkungan untuk fokus pada pekerjaan sendiri', ne: 'आफ्नो काममा ध्यान दिन सकिने वातावरण हुनु', th: 'มีสภาพแวดล้อมที่ทำให้โฟกัสกับงานตัวเองได้' } },
     ],
   },
   // ===== Q6〜Q10: 誠実性 (Conscientiousness) =====
@@ -149,14 +150,14 @@ export const questions: Question[] = [
       th: 'เมื่อคุณอาจจะมาสายกว่าที่นัด คุณจะทำอย่างไร?',
     },
     choices: [
-      { label: { ja: 'すぐ連絡して謝る', vi: 'Liên lạc ngay và xin lỗi', zh: '立即联系并道歉', tl: 'Makikipag-ugnayan agad at magsosorry', id: 'Segera menghubungi dan meminta maaf', ne: 'तुरुन्त सम्पर्क गरी माफी माग्छु', th: 'ติดต่อทันทีและขอโทษ' } },
-      { label: { ja: '到着してから謝る', vi: 'Đến nơi rồi xin lỗi', zh: '到达后再道歉', tl: 'Magsosorry pagdating', id: 'Meminta maaf setelah tiba', ne: 'पुगेपछि माफी माग्छु', th: 'ขอโทษเมื่อถึง' } },
-      { label: { ja: '少しなら黙っている', vi: 'Im lặng nếu chỉ trễ một chút', zh: '只是稍微晚就不说', tl: 'Kung konting huli lang, hindi sasabihin', id: 'Diam saja jika hanya sedikit terlambat', ne: 'थोरै ढिला भए चुप रहन्छु', th: 'ถ้าสายนิดเดียวก็เงียบ' } },
-      { label: { ja: '遅れても仕方ない', vi: 'Trễ cũng không sao', zh: '迟到也无所谓', tl: 'Okay lang mahuli', id: 'Terlambat juga tidak apa-apa', ne: 'ढिला भए पनि हुन्छ', th: 'สายก็ไม่เป็นไร' } },
+      { label: { ja: 'わかった時点ですぐ連絡し、到着予定を正確に伝える', vi: 'Liên lạc ngay khi biết và thông báo chính xác giờ đến', zh: '一发现就立即联系，准确告知到达时间', tl: 'Makikipag-ugnayan agad at sasabihin ang tamang oras ng dating', id: 'Segera menghubungi dan memberitahu waktu kedatangan yang tepat', ne: 'थाहा भएपछि तुरुन्तै सम्पर्क गरी पुग्ने समय जनाउँछु', th: 'ติดต่อทันทีที่รู้และบอกเวลาที่จะไปถึงอย่างแม่นยำ' } },
+      { label: { ja: 'できるだけ急いで向かい、間に合わなければ連絡する', vi: 'Cố gắng đến nhanh nhất, liên lạc nếu không kịp', zh: '尽量赶去，来不及的话就联系', tl: 'Bilisan hangga\'t maaari, makikipag-ugnayan kung hindi maaabot', id: 'Berusaha datang secepat mungkin, menghubungi jika tidak sempat', ne: 'सकेसम्म छिटो जान्छु, नपुगे सम्पर्क गर्छु', th: 'รีบไปให้เร็วที่สุด ถ้าไม่ทันจะติดต่อ' } },
+      { label: { ja: '到着してからきちんと事情を説明する', vi: 'Đến nơi rồi giải thích rõ lý do', zh: '到达后认真说明情况', tl: 'Pagdating, ipaliwanag nang maayos ang dahilan', id: 'Menjelaskan situasi dengan baik setelah tiba', ne: 'पुगेपछि राम्ररी कारण बताउँछु', th: 'อธิบายเหตุผลอย่างเรียบร้อยเมื่อถึง' } },
+      { label: { ja: '少しくらいの遅れなら仕方がないと思う', vi: 'Nghĩ rằng trễ một chút cũng không sao', zh: '觉得稍微迟到一点也没办法', tl: 'Okay lang kung konting late', id: 'Merasa terlambat sedikit tidak apa-apa', ne: 'थोरै ढिलो भए पनि बिचार गर्दिन', th: 'คิดว่าสายนิดหน่อยก็ไม่เป็นไร' } },
     ],
   },
   {
-    id: 7, axis: 'conscientiousness', reverseScore: true, referenceOnly: false,
+    id: 7, axis: 'conscientiousness', reverseScore: false, referenceOnly: false,
     text: {
       ja: '誰も見ていないとき、職場のルールをどう扱いますか？',
       vi: 'Khi không có ai nhìn, bạn đối xử với nội quy công ty như thế nào?',
@@ -167,14 +168,14 @@ export const questions: Question[] = [
       th: 'เมื่อไม่มีใครมองดู คุณปฏิบัติต่อกฎระเบียบของบริษัทอย่างไร?',
     },
     choices: [
-      { label: { ja: '見られていなくても守る', vi: 'Tuân thủ dù không ai nhìn', zh: '没人看也遵守', tl: 'Sinusunod kahit walang nakakakita', id: 'Tetap mematuhi meski tidak dilihat', ne: 'कसैले नहेरे पनि पालना गर्छु', th: 'ปฏิบัติตามแม้ไม่มีใครดู' } },
-      { label: { ja: '大体は守る', vi: 'Cơ bản là tuân thủ', zh: '基本上遵守', tl: 'Karamihan ay sinusunod', id: 'Pada dasarnya mematuhi', ne: 'सामान्यतः पालना गर्छु', th: 'โดยทั่วไปปฏิบัติตาม' } },
-      { label: { ja: '状況次第で変える', vi: 'Tùy tình huống', zh: '视情况而定', tl: 'Depende sa sitwasyon', id: 'Tergantung situasi', ne: 'परिस्थिति हेरेर निर्णय गर्छु', th: 'แล้วแต่สถานการณ์' } },
-      { label: { ja: '守らなくていいと思う', vi: 'Không cần tuân thủ', zh: '不需要遵守', tl: 'Hindi kailangan sumunod', id: 'Merasa tidak perlu mematuhi', ne: 'पालना गर्न जरुरी छैन', th: 'ไม่คิดว่าต้องปฏิบัติตาม' } },
+      { label: { ja: '人が見ていなくても同じように守る', vi: 'Tuân thủ như bình thường dù không ai nhìn', zh: '即使没人看也一样遵守', tl: 'Sinusunod pa rin kahit walang nakakakita', id: 'Tetap mematuhi seperti biasa meski tidak dilihat', ne: 'कसैले नहेरे पनि उस्तै रूपमा पालना गर्छु', th: 'ปฏิบัติตามเหมือนเดิมแม้ไม่มีใครดู' } },
+      { label: { ja: '基本的には守るが、効率のために少し変えることもある', vi: 'Cơ bản tuân thủ, nhưng đôi khi thay đổi nhỏ để hiệu quả hơn', zh: '基本遵守，但有时为了效率会稍作调整', tl: 'Karamihan sinusunod, pero minsan binabago nang kaunti para maging mas epektibo', id: 'Pada dasarnya mematuhi, tapi kadang sedikit berubah untuk efisiensi', ne: 'सामान्यतः पालना गर्छु, तर कुशलताका लागि केही बदल्छु', th: 'โดยทั่วไปปฏิบัติตาม แต่บางครั้งปรับเล็กน้อยเพื่อประสิทธิภาพ' } },
+      { label: { ja: '重要なルールは守るが、細かいものは場合による', vi: 'Tuân thủ quy tắc quan trọng, linh hoạt với quy tắc nhỏ', zh: '重要规则会遵守，小规则视情况而定', tl: 'Sinusunod ang mahahalagang patakaran, depende sa maliliit', id: 'Mematuhi aturan penting, fleksibel untuk yang kecil', ne: 'महत्त्वपूर्ण नियम पालना गर्छु, सानातिना अवस्थाअनुसार', th: 'ปฏิบัติตามกฎสำคัญ แต่กฎย่อยแล้วแต่สถานการณ์' } },
+      { label: { ja: 'ルールの目的を理解した上で、自分で判断する', vi: 'Hiểu mục đích của quy tắc và tự quyết định', zh: '理解规则目的后，自行判断', tl: 'Unawain ang layunin ng patakaran at pagpasyahan nang sarili', id: 'Memahami tujuan aturan dan memutuskan sendiri', ne: 'नियमको उद्देश्य बुझेर आफैं निर्णय गर्छु', th: 'เข้าใจจุดประสงค์ของกฎแล้วตัดสินใจเอง' } },
     ],
   },
   {
-    id: 8, axis: 'conscientiousness', reverseScore: true, referenceOnly: false,
+    id: 8, axis: 'conscientiousness', reverseScore: false, referenceOnly: false,
     text: {
       ja: '仕事でミスをしたとき、最初にどうしますか？',
       vi: 'Khi mắc lỗi trong công việc, việc đầu tiên bạn làm là gì?',
@@ -185,14 +186,14 @@ export const questions: Question[] = [
       th: 'เมื่อทำงานผิดพลาด สิ่งแรกที่คุณทำคืออะไร?',
     },
     choices: [
-      { label: { ja: 'すぐ上司に報告する', vi: 'Báo cáo cấp trên ngay lập tức', zh: '立即向上级报告', tl: 'Mag-uulat agad sa superyor', id: 'Segera melaporkan ke atasan', ne: 'तुरुन्त माथिल्लो अधिकारीलाई रिपोर्ट गर्छु', th: 'รายงานหัวหน้าทันที' } },
-      { label: { ja: '自分で直してから報告', vi: 'Tự sửa rồi mới báo cáo', zh: '自己改正后再报告', tl: 'Aayusin muna bago mag-ulat', id: 'Memperbaiki dulu baru melapor', ne: 'आफैं ठिक गरेर रिपोर्ट गर्छु', th: 'แก้ไขเองก่อนแล้วจึงรายงาน' } },
-      { label: { ja: 'なるべく隠したい', vi: 'Muốn giấu nếu có thể', zh: '尽量隐瞒', tl: 'Gusto itago kung posible', id: 'Ingin menyembunyikan jika bisa', ne: 'सम्भव भए लुकाउन चाहन्छु', th: 'อยากซ่อนถ้าทำได้' } },
-      { label: { ja: 'ばれなければいい', vi: 'Không sao nếu không bị phát hiện', zh: '不被发现就行了', tl: 'Okay na kung hindi mahuhuli', id: 'Tidak apa-apa asal tidak ketahuan', ne: 'थाहा नपाए हुन्छ', th: 'ไม่เป็นไรถ้าไม่มีใครรู้' } },
+      { label: { ja: '小さなミスでもすぐに報告し、対応を相談する', vi: 'Báo cáo ngay cả lỗi nhỏ và tham khảo cách xử lý', zh: '即使是小错误也立即报告，商量应对方法', tl: 'Kahit maliit na pagkakamali, ire-report agad at hihingi ng payo', id: 'Melaporkan meskipun kesalahan kecil dan konsultasi penanganannya', ne: 'सानो गल्ती भए पनि तुरुन्तै रिपोर्ट गरी समाधान सल्लाह गर्छु', th: 'รายงานทันทีแม้เป็นข้อผิดพลาดเล็กน้อยและปรึกษาการแก้ไข' } },
+      { label: { ja: '自分で修正できるか確認し、直してから報告する', vi: 'Kiểm tra xem có thể tự sửa không, sửa xong mới báo cáo', zh: '确认能否自己修正，修好后再报告', tl: 'Tingnan kung kaya bang ayusin, ayusin muna bago mag-report', id: 'Memeriksa apakah bisa diperbaiki sendiri, memperbaiki lalu melapor', ne: 'आफैं ठिक गर्न सकिन्छ कि हेर्छु, ठिक गरेर रिपोर्ट गर्छु', th: 'ตรวจสอบว่าแก้ไขเองได้ไหม แก้แล้วค่อยรายงาน' } },
+      { label: { ja: '影響の大きさを見て、報告するかどうか判断する', vi: 'Đánh giá mức ảnh hưởng để quyết định có báo cáo hay không', zh: '看影响大小，判断是否需要报告', tl: 'Tingnan ang laki ng epekto para magdesisyon kung ire-report', id: 'Melihat besarnya dampak untuk memutuskan perlu dilaporkan atau tidak', ne: 'प्रभावको मात्रा हेरेर रिपोर्ट गर्ने कि नगर्ने निर्णय गर्छु', th: 'ดูขนาดผลกระทบเพื่อตัดสินใจว่าจะรายงานหรือไม่' } },
+      { label: { ja: 'まず自分で解決を試みる。自力で直せれば問題ない', vi: 'Cố tự giải quyết trước. Nếu sửa được thì không sao', zh: '先自己尝试解决。能自己修好就没问题', tl: 'Subukang ayusin muna. Kung naayos, walang problema', id: 'Mencoba menyelesaikan sendiri dulu. Kalau bisa diperbaiki, tidak masalah', ne: 'पहिले आफैं समाधान गर्ने प्रयास गर्छु। ठिक भए समस्या छैन', th: 'ลองแก้ไขเองก่อน ถ้าแก้ได้ก็ไม่มีปัญหา' } },
     ],
   },
   {
-    id: 9, axis: 'conscientiousness', reverseScore: true, referenceOnly: false,
+    id: 9, axis: 'conscientiousness', reverseScore: false, referenceOnly: false,
     text: {
       ja: '仕事を途中で終わらせなければならない状況になったら？',
       vi: 'Nếu phải bỏ dở công việc giữa chừng, bạn sẽ làm gì?',
@@ -203,10 +204,10 @@ export const questions: Question[] = [
       th: 'ถ้าคุณต้องทิ้งงานกลางคัน คุณจะทำอย่างไร?',
     },
     choices: [
-      { label: { ja: '引き継ぎを丁寧に行う', vi: 'Bàn giao cẩn thận', zh: '认真做好交接', tl: 'Maingat na magha-handover', id: 'Melakukan serah terima dengan teliti', ne: 'ध्यानपूर्वक हस्तान्तरण गर्छु', th: 'ส่งมอบงานอย่างรอบคอบ' } },
-      { label: { ja: 'できる限り終わらせる', vi: 'Cố gắng hoàn thành nhiều nhất có thể', zh: '尽量完成更多', tl: 'Tatapusin ang lahat hangga\'t maaari', id: 'Berusaha menyelesaikan sebanyak mungkin', ne: 'सकेसम्म सकाउने प्रयास गर्छु', th: 'พยายามทำให้เสร็จมากที่สุด' } },
-      { label: { ja: '仕方がないと諦める', vi: 'Chấp nhận và bỏ qua', zh: '没办法就算了', tl: 'Wala nang magagawa, hayaan na', id: 'Tidak ada cara lain, pasrah saja', ne: 'लाचार भएर छोड्छु', th: 'จำเป็นก็ปล่อยไป' } },
-      { label: { ja: 'すぐ帰る', vi: 'Về ngay', zh: '直接离开', tl: 'Aalis na agad', id: 'Langsung pulang', ne: 'तुरुन्त जान्छु', th: 'กลับบ้านทันที' } },
+      { label: { ja: '引き継ぎ資料を作り、次の人が困らないようにする', vi: 'Tạo tài liệu bàn giao để người sau không gặp khó', zh: '制作交接文档，确保接手的人不会遇到困难', tl: 'Gumawa ng handover document para hindi mahirapan ang susunod', id: 'Membuat dokumen serah terima agar penerus tidak kesulitan', ne: 'हस्तान्तरण सामग्री बनाएर अर्को व्यक्तिलाई सजिलो बनाउँछु', th: 'ทำเอกสารส่งมอบเพื่อให้คนต่อไปไม่ลำบาก' } },
+      { label: { ja: '可能な限り自分で終わらせてから、残りを丁寧に引き継ぐ', vi: 'Hoàn thành nhiều nhất có thể, rồi bàn giao phần còn lại', zh: '尽量自己完成，然后认真交接剩余部分', tl: 'Tapusin hangga\'t maaari, tapos maayos na i-handover ang natitira', id: 'Menyelesaikan sebanyak mungkin, lalu menyerahkan sisanya dengan baik', ne: 'सकेसम्म आफैं सकाएर बाँकी ध्यानपूर्वक हस्तान्तरण गर्छु', th: 'ทำให้เสร็จมากที่สุดเท่าที่ได้แล้วส่งมอบส่วนที่เหลืออย่างรอบคอบ' } },
+      { label: { ja: '状況を説明して、誰かに引き継いでもらう', vi: 'Giải thích tình hình và nhờ người khác tiếp tục', zh: '说明情况，请别人接手', tl: 'Ipaliwanag ang sitwasyon at ipasa sa ibang tao', id: 'Menjelaskan situasi dan meminta orang lain melanjutkan', ne: 'अवस्था बताएर कसैलाई हस्तान्तरण गर्छु', th: 'อธิบายสถานการณ์และให้คนอื่นรับช่วงต่อ' } },
+      { label: { ja: 'やむを得ない状況なので、区切りの良いところで終える', vi: 'Vì bất khả kháng, nên dừng ở chỗ hợp lý', zh: '既然无奈，就在合适的地方收尾', tl: 'Dahil hindi na maiiwasan, tapusin sa magandang punto', id: 'Karena tidak bisa dihindari, berhenti di titik yang tepat', ne: 'लाचार अवस्था भएकोले, उपयुक्त ठाउँमा रोक्छु', th: 'เนื่องจากจำเป็น หยุดที่จุดที่เหมาะสม' } },
     ],
   },
   {
@@ -229,7 +230,7 @@ export const questions: Question[] = [
   },
   // ===== Q11〜Q15: 適応力 (Adaptability) =====
   {
-    id: 11, axis: 'adaptability', reverseScore: true, referenceOnly: false,
+    id: 11, axis: 'adaptability', reverseScore: false, referenceOnly: false,
     text: {
       ja: '日本の職場文化（礼儀・報連相など）についてどう思いますか？',
       vi: 'Bạn nghĩ sao về văn hóa làm việc Nhật Bản (lễ nghi, báo cáo liên lạc)?',
@@ -240,10 +241,10 @@ export const questions: Question[] = [
       th: 'คุณคิดอย่างไรกับวัฒนธรรมการทำงานของญี่ปุ่น (มารยาท การรายงาน การปรึกษา)?',
     },
     choices: [
-      { label: { ja: '理解して取り入れたい', vi: 'Muốn hiểu và áp dụng', zh: '理解并愿意融入', tl: 'Gustong maunawaan at sundin', id: 'Ingin memahami dan menerapkannya', ne: 'बुझेर अपनाउन चाहन्छु', th: 'อยากเข้าใจและนำไปใช้' } },
-      { label: { ja: '難しいが学びたい', vi: 'Khó nhưng muốn học', zh: '虽难但愿意学', tl: 'Mahirap ngunit gustong matuto', id: 'Sulit tapi ingin belajar', ne: 'गाह्रो छ तर सिक्न चाहन्छु', th: 'ยากแต่อยากเรียนรู้' } },
-      { label: { ja: '少し抵抗感がある', vi: 'Cảm thấy khó chịu', zh: '有些抵触', tl: 'Medyo hindi komportable', id: 'Merasa kurang nyaman', ne: 'अलि असहज महसुस हुन्छ', th: 'รู้สึกไม่สบายใจ' } },
-      { label: { ja: '必要と思わない', vi: 'Không thấy cần thiết', zh: '不觉得有必要', tl: 'Hindi ko kailangan', id: 'Tidak merasa perlu', ne: 'आवश्यक लाग्दैन', th: 'ไม่คิดว่าจำเป็น' } },
+      { label: { ja: '背景を理解して自分の働き方に取り入れたい', vi: 'Muốn hiểu lý do và áp dụng vào cách làm việc của mình', zh: '想了解背景并融入自己的工作方式', tl: 'Gustong maintindihan ang background at isama sa sariling paraan ng pagtatrabaho', id: 'Ingin memahami latar belakangnya dan menerapkan dalam cara kerja sendiri', ne: 'पृष्ठभूमि बुझेर आफ्नो कार्यशैलीमा अपनाउन चाहन्छु', th: 'อยากเข้าใจที่มาที่ไปและนำไปใช้ในการทำงานของตัวเอง' } },
+      { label: { ja: '慣れるまで時間はかかるが、学んでいきたい', vi: 'Cần thời gian để quen, nhưng muốn học hỏi', zh: '虽然需要时间适应，但愿意学习', tl: 'Kailangan ng oras para masanay, pero gustong matuto', id: 'Butuh waktu untuk terbiasa, tapi ingin belajar', ne: 'बसन समय लाग्छ तर सिक्दै जान चाहन्छु', th: 'ต้องใช้เวลาในการปรับตัว แต่อยากเรียนรู้' } },
+      { label: { ja: '大切な部分は取り入れつつ、自分の文化も活かしたい', vi: 'Tiếp thu phần quan trọng và giữ văn hóa riêng', zh: '吸收重要的部分，同时保留自己的文化', tl: 'Kunin ang mahahalagang bahagi at gamitin din ang sariling kultura', id: 'Mengadopsi bagian penting sambil mempertahankan budaya sendiri', ne: 'महत्त्वपूर्ण भाग अपनाउँदै आफ्नो संस्कृति पनि प्रयोग गर्न चाहन्छु', th: 'รับเอาส่วนสำคัญมาและใช้วัฒนธรรมของตัวเองด้วย' } },
+      { label: { ja: '仕事の成果が出ていれば、形式にこだわる必要は少ないと思う', vi: 'Nếu kết quả tốt thì không cần quá quan tâm hình thức', zh: '如果工作成果好，就不必太拘泥于形式', tl: 'Kung maganda ang resulta ng trabaho, hindi na kailangang mag-focus sa formalidad', id: 'Jika hasil kerja bagus, tidak perlu terlalu mementingkan formalitas', ne: 'काममा नतिजा आइरहेको छ भने, औपचारिकतामा बढी ध्यान दिनुपर्दैन', th: 'ถ้าผลงานดี ไม่จำเป็นต้องยึดติดกับรูปแบบมากนัก' } },
     ],
   },
   {
@@ -258,14 +259,14 @@ export const questions: Question[] = [
       th: 'เมื่อวิธีการทำงานเปลี่ยนแปลงอย่างกะทันหัน คุณรับมืออย่างไร?',
     },
     choices: [
-      { label: { ja: 'すぐに切り替えられる', vi: 'Chuyển đổi ngay lập tức', zh: '马上切换', tl: 'Agad na mag-aayos', id: 'Langsung beralih', ne: 'तुरुन्त अनुकूलन गर्छु', th: 'ปรับตัวได้ทันที' } },
-      { label: { ja: '少し時間がかかる', vi: 'Cần một chút thời gian', zh: '需要一点时间', tl: 'Kailangan ng kaunting oras', id: 'Butuh sedikit waktu', ne: 'अलि समय लाग्छ', th: 'ต้องการเวลาสักหน่อย' } },
-      { label: { ja: 'なぜ変わったか確認する', vi: 'Hỏi lý do thay đổi', zh: '确认变化原因', tl: 'Tatanungin kung bakit nagbago', id: 'Menanyakan alasan perubahan', ne: 'किन बदलियो भनेर सोध्छु', th: 'ถามเหตุผลที่เปลี่ยน' } },
-      { label: { ja: '変化が苦手・嫌だ', vi: 'Không giỏi thích nghi', zh: '不擅长适应变化', tl: 'Hindi magaling mag-adapt', id: 'Tidak pandai beradaptasi', ne: 'परिवर्तनमा अप्ठेरो लाग्छ', th: 'ปรับตัวกับการเปลี่ยนแปลงได้ยาก' } },
+      { label: { ja: '新しいやり方をまず試してみて、良い点を見つける', vi: 'Thử cách mới trước và tìm điểm tốt', zh: '先尝试新方法，寻找优点', tl: 'Subukan muna ang bagong paraan at hanapin ang magandang punto', id: 'Mencoba cara baru dulu dan menemukan kelebihannya', ne: 'पहिले नयाँ तरिका प्रयास गरी राम्रा पक्ष खोज्छु', th: 'ลองวิธีใหม่ก่อนและหาข้อดี' } },
+      { label: { ja: '変更の理由を聞いてから、前向きに取り組む', vi: 'Hỏi lý do thay đổi rồi tích cực thực hiện', zh: '了解变更原因后积极执行', tl: 'Itanong ang dahilan ng pagbabago, tapos gawin nang positibo', id: 'Menanyakan alasan perubahan, lalu bekerja secara positif', ne: 'परिवर्तनको कारण सोधेर, सकारात्मक रूपमा काम गर्छु', th: 'ถามเหตุผลที่เปลี่ยนแล้วทำอย่างสร้างสรรค์' } },
+      { label: { ja: '慣れるまで少し時間をもらいたい', vi: 'Muốn có thời gian để quen dần', zh: '希望给一点时间来适应', tl: 'Gusto ng kaunting oras para masanay', id: 'Ingin diberi sedikit waktu untuk terbiasa', ne: 'बस्न अलि समय चाहिन्छ', th: 'อยากได้เวลาสักหน่อยเพื่อปรับตัว' } },
+      { label: { ja: '前のやり方が良かった理由を伝えたい', vi: 'Muốn nói lý do cách cũ tốt hơn', zh: '想说明以前的方法更好的原因', tl: 'Gustong ipaliwanag kung bakit mas maganda ang lumang paraan', id: 'Ingin menyampaikan alasan mengapa cara lama lebih baik', ne: 'पहिलेको तरिका राम्रो भएको कारण बताउन चाहन्छु', th: 'อยากบอกเหตุผลที่วิธีเดิมดีกว่า' } },
     ],
   },
   {
-    id: 13, axis: 'adaptability', reverseScore: true, referenceOnly: false,
+    id: 13, axis: 'adaptability', reverseScore: false, referenceOnly: false,
     text: {
       ja: '知らない業務を任されたとき、どうしますか？',
       vi: 'Khi được giao công việc chưa biết, bạn làm gì?',
@@ -276,10 +277,10 @@ export const questions: Question[] = [
       th: 'เมื่อได้รับมอบหมายงานที่ไม่รู้จัก คุณจะทำอย่างไร?',
     },
     choices: [
-      { label: { ja: '積極的に聞いて学ぶ', vi: 'Chủ động hỏi và học', zh: '积极提问并学习', tl: 'Aktibong magtatanong at matututo', id: 'Aktif bertanya dan belajar', ne: 'सक्रिय रूपमा सोधेर सिक्छु', th: 'ถามอย่างกระตือรือร้นและเรียนรู้' } },
-      { label: { ja: 'まず自分で試みる', vi: 'Thử làm trước', zh: '先自己尝试', tl: 'Susubukan muna mismo', id: 'Mencoba sendiri dulu', ne: 'पहिले आफैं प्रयास गर्छु', th: 'ลองทำด้วยตัวเองก่อน' } },
-      { label: { ja: 'できないと伝える', vi: 'Nói là không làm được', zh: '告知做不到', tl: 'Sasabihing hindi ko magagawa', id: 'Memberitahu bahwa tidak bisa', ne: 'गर्न सक्दिन भन्छु', th: 'บอกว่าทำไม่ได้' } },
-      { label: { ja: '断る', vi: 'Từ chối', zh: '拒绝', tl: 'Tatanggihan', id: 'Menolak', ne: 'इन्कार गर्छु', th: 'ปฏิเสธ' } },
+      { label: { ja: 'まず自分で調べてから、わからない点を具体的に質問する', vi: 'Tự tìm hiểu trước, rồi hỏi cụ thể những điểm chưa rõ', zh: '先自己查找，再具体询问不明白的地方', tl: 'Mag-research muna, tapos magtanong ng mga specific na hindi maintindihan', id: 'Mencari tahu sendiri dulu, lalu bertanya spesifik tentang yang belum jelas', ne: 'पहिले आफैं खोजेर, नबुझेको कुरा विशेष रूपमा सोध्छु', th: 'ศึกษาด้วยตัวเองก่อน แล้วถามเฉพาะจุดที่ไม่เข้าใจ' } },
+      { label: { ja: '詳しい人に教えてもらいながら進める', vi: 'Nhờ người có kinh nghiệm hướng dẫn và làm theo', zh: '请有经验的人指导，边学边做', tl: 'Mag-paturo sa may alam habang ginagawa', id: 'Minta orang yang berpengalaman mengajari sambil bekerja', ne: 'अनुभवी व्यक्तिसँग सिक्दै काम गर्छु', th: 'ให้คนที่มีประสบการณ์สอนไปพร้อมกับทำ' } },
+      { label: { ja: 'やり方を一通り教えてもらってから取りかかる', vi: 'Được hướng dẫn đầy đủ trước rồi mới bắt đầu', zh: '先请人全面教一遍再开始', tl: 'Mag-pa-aral ng buong proseso bago magsimula', id: 'Meminta diajarkan prosesnya terlebih dahulu baru mulai', ne: 'पहिले सबै तरिका सिकेर मात्र काम सुरु गर्छु', th: 'เรียนรู้ขั้นตอนทั้งหมดก่อนแล้วค่อยเริ่ม' } },
+      { label: { ja: '自分の得意な業務と交換できないか相談する', vi: 'Thương lượng đổi sang công việc mình giỏi hơn', zh: '商量能否换成自己擅长的工作', tl: 'Makipag-usap kung pwedeng palitan ng trabahong alam ko', id: 'Berdiskusi apakah bisa ditukar dengan pekerjaan yang dikuasai', ne: 'आफ्नो दक्ष कामसँग साट्न सकिन्छ कि भनेर सल्लाह गर्छु', th: 'ปรึกษาว่าเปลี่ยนเป็นงานที่ถนัดได้ไหม' } },
     ],
   },
   {
@@ -294,10 +295,10 @@ export const questions: Question[] = [
       th: 'คุณรู้สึกอย่างไรกับการพัฒนาภาษาญี่ปุ่น?',
     },
     choices: [
-      { label: { ja: 'ぜひ上達したい', vi: 'Rất muốn cải thiện', zh: '非常想提高', tl: 'Gustong mapabuti', id: 'Sangat ingin meningkatkan', ne: 'अवश्य सुधार गर्न चाहन्छु', th: 'อยากพัฒนามาก' } },
-      { label: { ja: 'できれば学びたい', vi: 'Muốn học nếu có thể', zh: '如果可以愿意学', tl: 'Gustong matuto kung maaari', id: 'Ingin belajar jika memungkinkan', ne: 'सम्भव भए सिक्न चाहन्छु', th: 'อยากเรียนถ้าทำได้' } },
-      { label: { ja: '仕事に必要な分だけ', vi: 'Chỉ cần đủ dùng cho công việc', zh: '只需工作所需程度', tl: 'Para lang sa trabaho', id: 'Hanya sebatas kebutuhan kerja', ne: 'काममा चाहिनेजति मात्र', th: 'แค่ที่ต้องการสำหรับงาน' } },
-      { label: { ja: '特に必要と思わない', vi: 'Không thấy cần thiết', zh: '觉得没有必要', tl: 'Hindi ko kailangan', id: 'Tidak merasa perlu', ne: 'आवश्यक लाग्दैन', th: 'ไม่คิดว่าจำเป็น' } },
+      { label: { ja: '仕事以外の場面でも使えるよう積極的に学びたい', vi: 'Muốn học tích cực để dùng được cả ngoài công việc', zh: '想积极学习，在工作以外的场合也能使用', tl: 'Gustong aktibong mag-aral para magamit kahit sa labas ng trabaho', id: 'Ingin belajar secara aktif agar bisa digunakan di luar pekerjaan juga', ne: 'काम बाहेक अन्य ठाउँमा पनि प्रयोग गर्न सक्रिय रूपमा सिक्न चाहन्छु', th: 'อยากเรียนอย่างกระตือรือร้นเพื่อใช้นอกเหนือจากงานด้วย' } },
+      { label: { ja: '仕事で必要なレベルまではしっかり学びたい', vi: 'Muốn học vững đến mức cần thiết cho công việc', zh: '想踏实学到工作需要的水平', tl: 'Gustong mag-aral hanggang sa level na kailangan sa trabaho', id: 'Ingin belajar dengan serius sampai level yang dibutuhkan untuk pekerjaan', ne: 'काममा चाहिने स्तरसम्म राम्ररी सिक्न चाहन्छु', th: 'อยากเรียนอย่างจริงจังถึงระดับที่ต้องการสำหรับงาน' } },
+      { label: { ja: '周りのサポートを借りながら少しずつ覚えたい', vi: 'Muốn học dần với sự hỗ trợ từ người xung quanh', zh: '想借助周围人的帮助慢慢学习', tl: 'Gustong unti-unting matuto sa tulong ng mga kasamahan', id: 'Ingin belajar sedikit demi sedikit dengan bantuan orang sekitar', ne: 'वरिपरिको सहयोग लिँदै बिस्तारै सिक्न चाहन्छु', th: 'อยากค่อยๆ เรียนรู้โดยได้รับการสนับสนุนจากคนรอบข้าง' } },
+      { label: { ja: '仕事で最低限必要な言葉がわかれば十分だと思う', vi: 'Chỉ cần biết ngôn ngữ tối thiểu cần thiết cho công việc là đủ', zh: '觉得只要知道工作最基本的用语就够了', tl: 'Sapat na kung naiintindihan ang pinakakailangang salita sa trabaho', id: 'Merasa cukup jika mengerti bahasa minimum yang diperlukan untuk pekerjaan', ne: 'काममा न्यूनतम चाहिने शब्दहरू जानेसम्म पर्याप्त ठान्छु', th: 'คิดว่าแค่รู้ภาษาขั้นต่ำที่จำเป็นสำหรับงานก็เพียงพอ' } },
     ],
   },
   {
@@ -331,10 +332,10 @@ export const questions: Question[] = [
       th: 'เมื่อคุณตระหนักว่ามีวิธีที่ดีกว่าในการทำงาน คุณจะทำอย่างไร?',
     },
     choices: [
-      { label: { ja: '上司に提案する', vi: 'Đề xuất với cấp trên', zh: '向上级提出建议', tl: 'Imumungkahi sa superyor', id: 'Mengusulkan ke atasan', ne: 'माथिल्लो अधिकारीलाई सुझाव दिन्छु', th: 'เสนอแนะหัวหน้า' } },
-      { label: { ja: '同僚に話す', vi: 'Nói với đồng nghiệp', zh: '告诉同事', tl: 'Sasabihin sa katrabaho', id: 'Menceritakan ke rekan kerja', ne: 'सहकर्मीलाई बताउँछु', th: 'บอกเพื่อนร่วมงาน' } },
-      { label: { ja: '自分だけ実践する', vi: 'Tự áp dụng cho mình', zh: '只自己实践', tl: 'Gagawin para sa sarili ko lang', id: 'Menerapkan untuk diri sendiri saja', ne: 'आफैं मात्र अपनाउँछु', th: 'ทำเองแค่สำหรับตัวเอง' } },
-      { label: { ja: '何もしない', vi: 'Không làm gì', zh: '什么都不做', tl: 'Walang gagawin', id: 'Tidak melakukan apa-apa', ne: 'केही गर्दिन', th: 'ไม่ทำอะไร' } },
+      { label: { ja: '具体的な改善案をまとめて上司に提案する', vi: 'Tổng hợp đề xuất cải tiến cụ thể và trình lên cấp trên', zh: '整理具体改善方案后向上级提议', tl: 'Buuin ang konkretong improvement plan at imungkahi sa boss', id: 'Menyusun proposal perbaikan konkret dan mengusulkan ke atasan', ne: 'ठोस सुधार योजना बनाएर माथिल्लो अधिकारीलाई प्रस्ताव गर्छु', th: 'รวบรวมข้อเสนอปรับปรุงที่เป็นรูปธรรมแล้วเสนอหัวหน้า' } },
+      { label: { ja: 'まず同僚に話して反応を見てから判断する', vi: 'Nói với đồng nghiệp trước, xem phản ứng rồi quyết định', zh: '先跟同事聊聊看反应再决定', tl: 'Kausapin muna ang katrabaho, tingnan ang reaksyon bago magpasya', id: 'Membicarakan dengan rekan kerja dulu, melihat reaksi sebelum memutuskan', ne: 'पहिले सहकर्मीसँग कुरा गरी प्रतिक्रिया हेरेर निर्णय गर्छु', th: 'คุยกับเพื่อนร่วมงานก่อนดูปฏิกิริยาแล้วจึงตัดสินใจ' } },
+      { label: { ja: '自分の作業では新しい方法を試してみる', vi: 'Thử cách mới cho công việc của mình', zh: '在自己的工作中试用新方法', tl: 'Subukan ang bagong paraan sa sariling trabaho', id: 'Mencoba cara baru dalam pekerjaan sendiri', ne: 'आफ्नो कामामा नयाँ तरिका प्रयास गर्छु', th: 'ลองวิธีใหม่ในงานของตัวเอง' } },
+      { label: { ja: '指示された方法をまず確実にこなすことを優先する', vi: 'Ưu tiên hoàn thành tốt phương pháp đã được chỉ dẫn', zh: '优先按照指示的方法认真完成', tl: 'Unahin munang gawin nang maayos ang paraan na itinuro', id: 'Memprioritaskan menyelesaikan dengan baik sesuai metode yang ditentukan', ne: 'निर्देशित तरिकामा पहिले भरपर्दो ढंगले काम गर्नलाई प्राथमिकता दिन्छु', th: 'ให้ความสำคัญกับการทำตามวิธีที่ได้รับมอบหมายให้ดีก่อน' } },
     ],
   },
   {
@@ -349,10 +350,10 @@ export const questions: Question[] = [
       th: 'เมื่อมีเวลาว่างในที่ทำงาน คุณมักทำอะไร?',
     },
     choices: [
-      { label: { ja: '自分から仕事を探す', vi: 'Tự tìm việc để làm', zh: '主动找工作做', tl: 'Maghahanap ng trabahong gagawin', id: 'Mencari pekerjaan yang bisa dilakukan', ne: 'आफैं काम खोज्छु', th: 'หางานทำด้วยตัวเอง' } },
-      { label: { ja: '指示を待つ', vi: 'Chờ hướng dẫn', zh: '等待指示', tl: 'Maghihintay ng instruksyon', id: 'Menunggu instruksi', ne: 'निर्देशन पर्खन्छु', th: 'รอคำสั่ง' } },
-      { label: { ja: '同僚を手伝う', vi: 'Giúp đồng nghiệp', zh: '帮助同事', tl: 'Tutulong sa katrabaho', id: 'Membantu rekan kerja', ne: 'सहकर्मीलाई मद्दत गर्छु', th: 'ช่วยเหลือเพื่อนร่วมงาน' } },
-      { label: { ja: '休む・スマホを見る', vi: 'Nghỉ ngơi', zh: '休息/看手机', tl: 'Magpapahinga', id: 'Istirahat', ne: 'आराम गर्छु', th: 'พักผ่อน / เล่นโทรศัพท์' } },
+      { label: { ja: '周りを見て、手伝えることや次の準備を探す', vi: 'Nhìn xung quanh, tìm việc giúp đỡ hoặc chuẩn bị tiếp theo', zh: '看看周围，寻找可以帮忙的事或为下一步做准备', tl: 'Tumingin sa paligid, maghanap ng maitutulong o ihanda ang susunod', id: 'Melihat sekitar, mencari yang bisa dibantu atau persiapan selanjutnya', ne: 'वरिपरि हेरेर मद्दत गर्न सकिने वा अर्को तयारी खोज्छु', th: 'มองรอบๆ หาสิ่งที่ช่วยได้หรือเตรียมงานถัดไป' } },
+      { label: { ja: '自分のスキルアップにつながることをする', vi: 'Làm những gì giúp nâng cao kỹ năng bản thân', zh: '做有助于提升自己技能的事', tl: 'Gumawa ng bagay na makakatulong sa sariling skill improvement', id: 'Melakukan hal yang bisa meningkatkan kemampuan sendiri', ne: 'आफ्नो सीप विकासमा मद्दत पुग्ने काम गर्छु', th: 'ทำสิ่งที่ช่วยพัฒนาทักษะของตัวเอง' } },
+      { label: { ja: '上司に何をすべきか確認する', vi: 'Hỏi cấp trên nên làm gì', zh: '向上级确认应该做什么', tl: 'Itanong sa boss kung ano ang dapat gawin', id: 'Bertanya ke atasan apa yang harus dilakukan', ne: 'माथिल्लो अधिकारीलाई के गर्ने भनेर सोध्छु', th: 'ถามหัวหน้าว่าควรทำอะไร' } },
+      { label: { ja: 'しっかり休んで、次の業務に備える', vi: 'Nghỉ ngơi đầy đủ để chuẩn bị cho công việc tiếp theo', zh: '好好休息，为下一项工作做准备', tl: 'Magpahinga nang maayos para sa susunod na trabaho', id: 'Beristirahat dengan baik untuk persiapan pekerjaan berikutnya', ne: 'राम्ररी आराम गरी अर्को कामको तयारी गर्छु', th: 'พักผ่อนอย่างเต็มที่เพื่อเตรียมพร้อมสำหรับงานถัดไป' } },
     ],
   },
   {
@@ -367,14 +368,14 @@ export const questions: Question[] = [
       th: 'คุณมีวิสัยทัศน์อะไรเกี่ยวกับงานของคุณในอีก 5 ปีข้างหน้า?',
     },
     choices: [
-      { label: { ja: 'リーダーになりたい', vi: 'Muốn trở thành lãnh đạo', zh: '想成为领导', tl: 'Gusto maging lider', id: 'Ingin menjadi pemimpin', ne: 'नेता बन्न चाहन्छु', th: 'อยากเป็นผู้นำ' } },
-      { label: { ja: '専門技術を深めたい', vi: 'Muốn nâng cao kỹ năng chuyên môn', zh: '想深化专业技能', tl: 'Gusto palalimin ang espesyalidad', id: 'Ingin memperdalam keahlian', ne: 'विशेष सीप गहन बनाउन चाहन्छु', th: 'อยากพัฒนาทักษะเฉพาะทาง' } },
-      { label: { ja: '今の仕事を続けたい', vi: 'Tiếp tục công việc hiện tại', zh: '继续现在的工作', tl: 'Ituloy ang kasalukuyang trabaho', id: 'Melanjutkan pekerjaan saat ini', ne: 'हालको काम जारी राख्न चाहन्छु', th: 'อยากทำงานปัจจุบันต่อไป' } },
-      { label: { ja: 'まだ考えていない', vi: 'Chưa nghĩ đến', zh: '还没想过', tl: 'Hindi pa naiisip', id: 'Belum memikirkannya', ne: 'अझै सोचेको छैन', th: 'ยังไม่ได้คิด' } },
+      { label: { ja: 'チームをまとめる立場で会社に貢献したい', vi: 'Muốn đóng góp cho công ty ở vị trí dẫn dắt nhóm', zh: '想以团队领导的身份为公司做贡献', tl: 'Gustong mag-ambag sa kumpanya bilang team leader', id: 'Ingin berkontribusi ke perusahaan di posisi yang memimpin tim', ne: 'टोली नेतृत्व गर्ने ठाउँमा कम्पनीमा योगदान गर्न चाहन्छु', th: 'อยากมีส่วนร่วมกับบริษัทในฐานะผู้นำทีม' } },
+      { label: { ja: '専門スキルを磨いてプロフェッショナルになりたい', vi: 'Muốn trau dồi kỹ năng chuyên môn để trở thành chuyên gia', zh: '想磨练专业技能成为专家', tl: 'Gustong paghusayin ang espesyalidad at maging propesyonal', id: 'Ingin mengasah keahlian dan menjadi profesional', ne: 'विशेष सीप सुधारेर पेशेवर बन्न चाहन्छु', th: 'อยากฝึกฝนทักษะเฉพาะทางเพื่อเป็นมืออาชีพ' } },
+      { label: { ja: '安定した環境で着実にキャリアを積みたい', vi: 'Muốn phát triển sự nghiệp vững chắc trong môi trường ổn định', zh: '想在稳定的环境中踏实积累经验', tl: 'Gustong bumuo ng career nang matatag sa stable na kapaligiran', id: 'Ingin membangun karir secara mantap di lingkungan yang stabil', ne: 'स्थिर वातावरणमा बिस्तारै क्यारियर बनाउन चाहन्छु', th: 'อยากสร้างอาชีพอย่างมั่นคงในสภาพแวดล้อมที่เสถียร' } },
+      { label: { ja: 'まずは目の前の仕事をしっかりやることが大事だと思う', vi: 'Nghĩ rằng trước hết phải làm tốt công việc trước mắt', zh: '觉得首先要做好眼前的工作', tl: 'Sa tingin ko mahalaga munang gawin nang maayos ang trabaho ngayon', id: 'Menurut saya yang penting adalah mengerjakan pekerjaan di depan mata dengan baik', ne: 'पहिले सामुन्नेको काम राम्ररी गर्नु महत्त्वपूर्ण ठान्छु', th: 'คิดว่าสิ่งสำคัญคือทำงานตรงหน้าให้ดีก่อน' } },
     ],
   },
   {
-    id: 19, axis: 'proactivity', reverseScore: true, referenceOnly: false,
+    id: 19, axis: 'proactivity', reverseScore: false, referenceOnly: false,
     text: {
       ja: '上司から厳しいフィードバックをもらったとき、どう感じますか？',
       vi: 'Khi nhận phản hồi gay gắt từ cấp trên, bạn cảm thấy thế nào?',
@@ -385,10 +386,10 @@ export const questions: Question[] = [
       th: 'เมื่อได้รับ feedback ที่รุนแรงจากหัวหน้า คุณรู้สึกอย่างไร?',
     },
     choices: [
-      { label: { ja: '成長のチャンスと思う', vi: 'Xem đó là cơ hội phát triển', zh: '视为成长机会', tl: 'Tinitingnan bilang pagkakataon para lumago', id: 'Melihatnya sebagai kesempatan berkembang', ne: 'विकासको अवसर ठान्छु', th: 'มองเป็นโอกาสในการเติบโต' } },
-      { label: { ja: '少し凹むが活かす', vi: 'Hơi nản nhưng cố gắng tận dụng', zh: '有点沮丧但会加以利用', tl: 'Medyo nalulungkot ngunit ginagamit', id: 'Sedikit kecewa tapi memanfaatkannya', ne: 'अलि निराश भए पनि प्रयोग गर्छु', th: 'เสียใจนิดหน่อยแต่นำไปใช้ประโยชน์' } },
-      { label: { ja: 'やる気がなくなる', vi: 'Mất động lực', zh: '失去干劲', tl: 'Nawalan ng gana', id: 'Kehilangan motivasi', ne: 'उत्साह गुम्छ', th: 'หมดกำลังใจ' } },
-      { label: { ja: '辞めたくなる', vi: 'Muốn nghỉ việc', zh: '想辞职', tl: 'Gustong mag-resign', id: 'Ingin berhenti kerja', ne: 'जागिर छोड्न मन लाग्छ', th: 'อยากลาออก' } },
+      { label: { ja: '具体的に何を改善すべきか考え、すぐ行動に移す', vi: 'Suy nghĩ cụ thể cần cải thiện gì và hành động ngay', zh: '具体思考应该改善什么，并立即行动', tl: 'Pag-isipan kung ano ang dapat i-improve at agad na kumilos', id: 'Memikirkan secara spesifik apa yang perlu diperbaiki dan segera bertindak', ne: 'विशेष रूपमा के सुधार्ने सोचेर तुरुन्तै कार्यमा लाग्छु', th: 'คิดอย่างเป็นรูปธรรมว่าควรปรับปรุงอะไรและลงมือทันที' } },
+      { label: { ja: '一度受け止めてから、自分なりに改善点を見つける', vi: 'Tiếp nhận trước, rồi tự tìm điểm cần cải thiện', zh: '先接受，然后自己找出改善点', tl: 'Tanggapin muna, tapos hanapin ang sariling improvement points', id: 'Menerima dulu, lalu menemukan sendiri hal yang perlu diperbaiki', ne: 'पहिले स्वीकार गरी, आफ्नै तरिकाले सुधारका बिन्दुहरू खोज्छु', th: 'รับฟังก่อน แล้วค่อยหาจุดที่ต้องปรับปรุงด้วยตัวเอง' } },
+      { label: { ja: '少し落ち込むが、時間が経てば前向きになれる', vi: 'Hơi buồn nhưng sau một thời gian sẽ tích cực lại', zh: '会有点沮丧，但过段时间就能变积极', tl: 'Medyo malulungkot pero magiging positibo pagkaraan ng ilang panahon', id: 'Sedikit kecewa, tapi bisa positif setelah beberapa waktu', ne: 'अलि निराश हुन्छ, तर समय बित्दा सकारात्मक हुन्छु', th: 'เสียใจนิดหน่อย แต่พอเวลาผ่านไปก็กลับมาเป็นบวกได้' } },
+      { label: { ja: 'フィードバックの内容が適切かどうか、まず考える', vi: 'Trước hết suy nghĩ xem nội dung phản hồi có phù hợp không', zh: '先考虑反馈内容是否恰当', tl: 'Pag-isipan muna kung tama ba ang feedback', id: 'Mempertimbangkan terlebih dahulu apakah isi umpan balik tepat', ne: 'पहिले प्रतिक्रियाको विषय उचित छ कि छैन सोच्छु', th: 'คิดก่อนว่าเนื้อหา feedback เหมาะสมหรือไม่' } },
     ],
   },
   {
