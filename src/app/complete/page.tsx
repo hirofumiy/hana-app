@@ -22,7 +22,7 @@ function CompleteContent() {
           {UI_TEXT.thankYou[lang]}
         </h1>
 
-        <p className="text-gray-600 leading-relaxed">
+        <p className="text-gray-600 leading-relaxed whitespace-pre-line">
           {UI_TEXT.testComplete[lang]}
         </p>
 
