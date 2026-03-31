@@ -21,7 +21,9 @@ export async function POST(request: Request) {
     .single();
 
   // 会社が未登録でも結果は保存する（デモ利用対応）
-  const { error } = await supabase.from('test_results').insert({
+  // まずconsistencyカラム含めてINSERT試行、失敗したらconsistency抜きでリトライ
+  let insertError = null;
+  const fullData = {
     id,
     candidate_name: candidateName || '',
     company_code: companyCode,
@@ -31,10 +33,22 @@ export async function POST(request: Request) {
     industry_score: industryScore ?? null,
     consistency: consistency ?? null,
     completed_at: completedAt,
-  });
+  };
+
+  const { error } = await supabase.from('test_results').insert(fullData);
 
   if (error) {
-    console.error('DB insert error:', error);
+    console.error('DB insert error (with consistency):', error.message);
+    // consistencyカラムが存在しない可能性 → カラム抜きでリトライ
+    const { consistency: _c, ...dataWithoutConsistency } = fullData;
+    const { error: retryError } = await supabase.from('test_results').insert(dataWithoutConsistency);
+    if (retryError) {
+      console.error('DB insert error (retry):', retryError);
+      insertError = retryError;
+    }
+  }
+
+  if (insertError) {
     return NextResponse.json({ error: 'Failed to save result' }, { status: 500 });
   }
 
