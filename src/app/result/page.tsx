@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AXIS_LABELS, type Axis } from '@/lib/questions';
-import { getJudgment, getStrengthsAndWeaknesses, type TestResult } from '@/lib/scoring';
+import { getJudgment, getStrengthsAndWeaknesses, type TestResult, type ConsistencyResult } from '@/lib/scoring';
 
 interface AiComment {
   judgment: string;
@@ -230,6 +230,50 @@ function ResultContent() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* 回答一貫性 */}
+      {result.consistency && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            回答の一貫性
+          </h2>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex-1">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-600">信頼度</span>
+                <span className={`font-bold ${
+                  result.consistency.overall >= 80 ? 'text-[#1D9E75]' :
+                  result.consistency.overall >= 60 ? 'text-yellow-600' :
+                  'text-red-500'
+                }`}>
+                  {result.consistency.overall}%
+                </span>
+              </div>
+              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${
+                    result.consistency.overall >= 80 ? 'bg-[#1D9E75]' :
+                    result.consistency.overall >= 60 ? 'bg-yellow-500' :
+                    'bg-red-400'
+                  }`}
+                  style={{ width: `${result.consistency.overall}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          {result.consistency.flaggedAxes && result.consistency.flaggedAxes.length > 0 && (
+            <div className="mt-2 px-3 py-2 bg-red-50 rounded-lg">
+              <p className="text-xs text-red-600">
+                🚩 {result.consistency.flaggedAxes.map(a => AXIS_LABELS[a].ja).join('・')}の回答にばらつきがあります。
+                面接で確認することを推奨します。
+              </p>
+            </div>
+          )}
+          {result.consistency.overall >= 80 && (
+            <p className="text-xs text-gray-400 mt-2">✓ 回答に一貫性があり、結果の信頼性は高いと判断されます。</p>
+          )}
         </div>
       )}
 

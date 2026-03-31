@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { questions, type Language, type Question } from '@/lib/questions';
 import { getIndustryQuestions, type IndustryQuestion } from '@/lib/industry-questions';
 import { UI_TEXT } from '@/lib/i18n';
-import { calculateScores, calculateIndustryScore, generateResultId, type TestResult } from '@/lib/scoring';
+import { calculateScores, calculateIndustryScore, calculateConsistency, generateResultId, type TestResult } from '@/lib/scoring';
 
 // 統合質問型（ベース + 業種別を同じインターフェースで扱う）
 interface UnifiedQuestion {
@@ -14,7 +14,7 @@ interface UnifiedQuestion {
   choices: [{ label: Record<Language, string> }, { label: Record<Language, string> }, { label: Record<Language, string> }, { label: Record<Language, string> }];
 }
 
-// Mulberry32 PRNG シャッフル（偏りの少ない32bit乱数生成器）
+// Mulberry32 PRNG シャッフル
 function seededShuffle<T>(arr: T[], seed: number): { item: T; originalIndex: number }[] {
   const indexed = arr.map((item, i) => ({ item, originalIndex: i }));
   let s = seed | 0;
@@ -41,8 +41,10 @@ export default function TestContent() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [industryQuestions, setIndustryQuestions] = useState<IndustryQuestion[]>([]);
   const [industryLoaded, setIndustryLoaded] = useState(false);
+  const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 会社の業種を取得して業種別質問をロード
   useEffect(() => {
@@ -86,6 +88,13 @@ export default function TestContent() {
     return map;
   }, [shuffleSeed, allQuestions]);
 
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (transitionTimer.current) clearTimeout(transitionTimer.current);
+    };
+  }, []);
+
   if (!industryLoaded) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -101,49 +110,54 @@ export default function TestContent() {
   const progress = ((currentIndex) / totalQuestions) * 100;
   const shuffledChoices = shuffledChoicesMap[currentQuestion.id];
 
+  // 選択 → 即遷移（0.4秒のハイライト後に自動で次へ）
   const handleChoiceSelect = (displayIndex: number) => {
+    if (isTransitioning || !shuffledChoices) return;
+
     setSelectedChoice(displayIndex);
-  };
+    setIsTransitioning(true);
 
-  const handleNext = () => {
-    if (selectedChoice === null || !shuffledChoices) return;
+    transitionTimer.current = setTimeout(() => {
+      const originalIndex = shuffledChoices[displayIndex].originalIndex;
+      const newAnswers = { ...answers, [currentQuestion.id]: originalIndex };
+      setAnswers(newAnswers);
+      setSelectedChoice(null);
+      setIsTransitioning(false);
 
-    const originalIndex = shuffledChoices[selectedChoice].originalIndex;
-    const newAnswers = { ...answers, [currentQuestion.id]: originalIndex };
-    setAnswers(newAnswers);
-    setSelectedChoice(null);
+      if (currentIndex < totalQuestions - 1) {
+        setCurrentIndex(prev => prev + 1);
+      } else {
+        // テスト完了
+        const scores = calculateScores(newAnswers);
+        const industryScore = calculateIndustryScore(newAnswers);
+        const consistency = calculateConsistency(newAnswers);
+        const resultId = generateResultId();
 
-    if (currentIndex < totalQuestions - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      const scores = calculateScores(newAnswers);
-      const industryScore = calculateIndustryScore(newAnswers);
-      const resultId = generateResultId();
+        const result: TestResult = {
+          id: resultId,
+          candidateName,
+          companyCode,
+          language: lang,
+          answers: newAnswers,
+          scores,
+          industryScore,
+          consistency,
+          completedAt: new Date().toISOString(),
+        };
 
-      const result: TestResult = {
-        id: resultId,
-        candidateName,
-        companyCode,
-        language: lang,
-        answers: newAnswers,
-        scores,
-        industryScore,
-        completedAt: new Date().toISOString(),
-      };
+        fetch('/api/submit-result', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(result),
+        }).catch(() => {
+          const existing = JSON.parse(localStorage.getItem('hana-results') ?? '[]');
+          existing.push(result);
+          localStorage.setItem('hana-results', JSON.stringify(existing));
+        });
 
-      // Supabase に保存（失敗時はlocalStorageフォールバック）
-      fetch('/api/submit-result', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result),
-      }).catch(() => {
-        const existing = JSON.parse(localStorage.getItem('hana-results') ?? '[]');
-        existing.push(result);
-        localStorage.setItem('hana-results', JSON.stringify(existing));
-      });
-
-      router.push(`/complete?lang=${lang}&id=${resultId}`);
-    }
+        router.push(`/complete?lang=${lang}&id=${resultId}`);
+      }
+    }, 400);
   };
 
   const choiceLabels = ['A', 'B', 'C', 'D'];
@@ -175,20 +189,23 @@ export default function TestContent() {
         </p>
       </div>
 
-      {/* 選択肢（ランダム順） */}
+      {/* 選択肢（ランダム順・選択即遷移） */}
       <div className="space-y-3 flex-1">
         {shuffledChoices?.map((entry, displayIndex) => (
           <button
             key={entry.originalIndex}
             onClick={() => handleChoiceSelect(displayIndex)}
+            disabled={isTransitioning}
             className={`w-full flex items-start gap-3 px-4 py-4 rounded-xl border-2 transition-all text-left active:scale-[0.98] ${
               selectedChoice === displayIndex
-                ? 'border-[#1D9E75] bg-green-50 shadow-sm'
-                : 'border-gray-200 bg-white hover:border-gray-300'
+                ? 'border-[#1D9E75] bg-green-50 shadow-sm scale-[0.98]'
+                : isTransitioning
+                  ? 'border-gray-100 bg-gray-50 opacity-50'
+                  : 'border-gray-200 bg-white hover:border-gray-300'
             }`}
           >
             <span
-              className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+              className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
                 selectedChoice === displayIndex
                   ? 'bg-[#1D9E75] text-white'
                   : 'bg-gray-100 text-gray-500'
@@ -203,21 +220,11 @@ export default function TestContent() {
         ))}
       </div>
 
-      {/* 次へボタン */}
-      <div className="mt-6 pb-4">
-        <button
-          onClick={handleNext}
-          disabled={selectedChoice === null}
-          className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-            selectedChoice !== null
-              ? 'bg-[#1D9E75] hover:bg-[#178a66] text-white shadow-sm active:scale-[0.98]'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
-        >
-          {currentIndex < totalQuestions - 1
-            ? UI_TEXT.next[lang]
-            : '✓'}
-        </button>
+      {/* 選択即遷移のため「次へ」ボタンは不要 */}
+      <div className="mt-6 pb-4 text-center">
+        <p className="text-xs text-gray-300">
+          {isTransitioning ? '...' : '選択すると自動で次に進みます'}
+        </p>
       </div>
     </div>
   );

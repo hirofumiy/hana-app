@@ -5,7 +5,7 @@ import { sendResultNotification } from '@/lib/email';
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { id, candidateName, companyCode, language, answers, scores, industryScore, completedAt } = body;
+  const { id, candidateName, companyCode, language, answers, scores, industryScore, consistency, completedAt } = body;
 
   if (!id || !companyCode || !scores) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -29,6 +29,7 @@ export async function POST(request: Request) {
     answers,
     scores,
     industry_score: industryScore ?? null,
+    consistency: consistency ?? null,
     completed_at: completedAt,
   });
 

@@ -10,6 +10,11 @@ export interface Scores {
   stressTolerance: number;
 }
 
+export interface ConsistencyResult {
+  overall: number; // 0-100 (高い = 一貫性あり)
+  flaggedAxes: Axis[]; // ばらつきが大きい軸
+}
+
 export interface TestResult {
   id: string;
   candidateName: string;
@@ -18,6 +23,7 @@ export interface TestResult {
   answers: Record<number, number>; // questionId -> choiceIndex (0-3)
   scores: Scores;
   industryScore: number; // 業種適性スコア (0-100)
+  consistency: ConsistencyResult; // 回答一貫性
   completedAt: string;
 }
 
@@ -130,6 +136,52 @@ export function getStrengthsAndWeaknesses(scores: Scores): {
   }
 
   return { strengths, weaknesses };
+}
+
+/**
+ * 回答の一貫性チェック
+ * 同じ軸の3問の回答スコアのばらつき（標準偏差）を計算。
+ * 例: 協調性の3問で [5, 5, 5] → 完全一貫 / [5, 0, 5] → ばらつき大（不誠実の可能性）
+ */
+export function calculateConsistency(answers: Record<number, number>): ConsistencyResult {
+  const axisScores: Record<Axis, number[]> = {
+    agreeableness: [],
+    conscientiousness: [],
+    adaptability: [],
+    proactivity: [],
+    stressTolerance: [],
+  };
+
+  for (const q of questions) {
+    const choiceIndex = answers[q.id];
+    if (choiceIndex === undefined) continue;
+    axisScores[q.axis].push(getScore(choiceIndex));
+  }
+
+  const flaggedAxes: Axis[] = [];
+  const axisConsistencies: number[] = [];
+
+  for (const [axis, scores] of Object.entries(axisScores) as [Axis, number[]][]) {
+    if (scores.length < 2) {
+      axisConsistencies.push(100);
+      continue;
+    }
+    const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+    const variance = scores.reduce((sum, s) => sum + (s - mean) ** 2, 0) / scores.length;
+    const stdDev = Math.sqrt(variance);
+    // 最大標準偏差 ≈ 2.5 (例: [5, 0] の場合)。0→100, 2.5→0 にマッピング
+    const consistency = Math.round(Math.max(0, (1 - stdDev / 2.5)) * 100);
+    axisConsistencies.push(consistency);
+
+    // 標準偏差が2.0以上 = 同じ軸で真逆の回答をしている → フラグ
+    if (stdDev >= 2.0) {
+      flaggedAxes.push(axis);
+    }
+  }
+
+  const overall = Math.round(axisConsistencies.reduce((a, b) => a + b, 0) / axisConsistencies.length);
+
+  return { overall, flaggedAxes };
 }
 
 export function generateResultId(): string {
