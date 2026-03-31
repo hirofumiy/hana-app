@@ -7,13 +7,17 @@ import { UI_TEXT } from '@/lib/i18n';
 import { calculateScores, generateResultId, type TestResult } from '@/lib/scoring';
 
 // シード付きシャッフル（同一セッション内で固定順序を保証）
+// Mulberry32 PRNG（偏りの少ない32bit乱数生成器）
 function seededShuffle<T>(arr: T[], seed: number): { item: T; originalIndex: number }[] {
   const indexed = arr.map((item, i) => ({ item, originalIndex: i }));
-  let s = seed;
+  let s = seed | 0;
   const next = () => {
-    s = (s * 1664525 + 1013904223) & 0x7fffffff;
-    return s / 0x7fffffff;
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+  // Fisher-Yates shuffle
   for (let i = indexed.length - 1; i > 0; i--) {
     const j = Math.floor(next() * (i + 1));
     [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
