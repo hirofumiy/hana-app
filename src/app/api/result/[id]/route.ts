@@ -25,6 +25,8 @@ export async function GET(
     language: data.language,
     answers: data.answers,
     scores: data.scores,
+    industryScore: data.industry_score ?? null,
+    consistency: data.consistency ?? null,
     referenceAnswers: data.reference_answers,
     aiComment: data.ai_comment,
     completedAt: data.completed_at,
