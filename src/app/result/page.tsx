@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { AXIS_LABELS, type Axis } from '@/lib/questions';
 import { getJudgment, getStrengthsAndWeaknesses, type TestResult, type ConsistencyResult } from '@/lib/scoring';
 
@@ -60,7 +60,6 @@ function JudgmentBadge({ judgment }: { judgment: string }) {
 
 function ResultContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const resultId = searchParams.get('id');
   const [result, setResult] = useState<TestResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -151,12 +150,12 @@ function ResultContent() {
           </div>
         </div>
         <div className="print:hidden flex items-center gap-2">
-          <button
-            onClick={() => router.push('/admin')}
+          <a
+            href="/admin"
             className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
           >
             ← 一覧に戻る
-          </button>
+          </a>
           <button
             onClick={() => window.print()}
             className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
